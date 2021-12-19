@@ -4,6 +4,7 @@
   "description": "Community ORganizer for Grassroots Initiatives",
   "main": "serve.js",
   "scripts": {
+    "serve": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
