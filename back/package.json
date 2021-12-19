@@ -1,0 +1,26 @@
+{
+  "name": "corgi",
+  "version": "1.0.0",
+  "description": "Community ORganizer for Grassroots Initiatives",
+  "main": "serve.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danieldupriest/corgi.git"
+  },
+  "author": "Daniel Dupriest",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danieldupriest/corgi/issues"
+  },
+  "homepage": "https://github.com/danieldupriest/corgi#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "@vue/cli": "^4.5.15",
+    "vue": "^3.2.26"
+  }
+}
