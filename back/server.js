@@ -11,11 +11,6 @@ const port = process.env.PORT
 app.use(express.json())
 app.use(cors())
 
-app.get('/', function (req, res) {
-    res.json({
-        message: 'Hello World'
-    })
-})
 app.post('/api/contacts/upload', upload.single('file'), async (req, res) => {
     const path = req.file.path
     try {
@@ -38,6 +33,17 @@ app.post('/api/contacts/upload', upload.single('file'), async (req, res) => {
             message: err 
         })
     }
+})
+app.use((req, res, next) => {
+    const err = new Error("Page not found")
+    err.status = 404
+    next(err)
+})
+app.use((err, req, res, next) => {
+    res.status(err.status || 500)
+    return res.json({
+        error: err.message
+    })
 })
 
 app.listen(port, () => {
