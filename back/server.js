@@ -1,9 +1,12 @@
+require("dotenv").config()
 const express = require('express')
 const upload = require('multer')({ dest: 'tmp/' })
 const csv = require('async-csv')
 const cors = require('cors')
 const fs = require('fs')
 const app = express()
+
+const port = process.env.PORT
 
 app.use(express.json())
 app.use(cors())
@@ -21,6 +24,8 @@ app.post('/api/contacts/upload', upload.single('file'), async (req, res) => {
         fs.unlink(path, (err) => {
             if (err) {
                 console.error(err)
+            } else {
+                console.debug(`Deleted temp file: ${path}`)
             }
         })
         return res.json({
@@ -35,4 +40,6 @@ app.post('/api/contacts/upload', upload.single('file'), async (req, res) => {
     }
 })
 
-app.listen(3000)
+app.listen(PORT, () => {
+    console.log(`CORGI server started on port ${PORT}.`)
+})
