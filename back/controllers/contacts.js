@@ -1,6 +1,6 @@
 require("dotenv").config()
-const csv = require('async-csv')
 const fs = require("fs")
+const { csvToHeadersAndDict } = require("../utils/csv-utils")
 const Contact = require("../database/contact")
 
 const tempPath = process.env.TEMP_PATH
@@ -21,24 +21,26 @@ exports.mergeContacts = async (req, res, next) => {
 
 exports.uploadContacts = async (req, res, next) => {
     const path = req.file.path
-    const parts = req.file.path.split("/")
-    const filename = parts.slice(-1)[0]
+
     try {
-        const data = fs.readFileSync(path, {encoding:'utf8', flag:'r'})
-        const rows = await csv.parse(data)
-        fs.unlink(path, (err) => {
-            if (err) {
-                console.error(err)
-            } else {
-                console.debug(`Deleted temp file: ${filename}`)
-            }
-        })
+        const [headers, contacts] = await csvToHeadersAndDict(path)
         return res.json({
             message: "Upload successful!",
-            rows: rows
+            headers: headers,
+            contacts: contacts
         })
     } catch (err) {
         res.status = 500
         next(err)
+    } finally {
+        if (fs.existsSync(path)) {
+            fs.unlink(path, (err) => {
+                if (err) {
+                    console.error(err)
+                } else {
+                    console.debug(`Deleted temp file: ${path}`)
+                }
+            })    
+        }
     }
 }
