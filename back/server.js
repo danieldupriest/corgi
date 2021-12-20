@@ -40,6 +40,6 @@ app.post('/api/contacts/upload', upload.single('file'), async (req, res) => {
     }
 })
 
-app.listen(PORT, () => {
-    console.log(`CORGI server started on port ${PORT}.`)
+app.listen(port, () => {
+    console.log(`CORGI server started on port ${port}.`)
 })

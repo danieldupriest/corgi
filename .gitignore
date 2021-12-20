@@ -1,6 +1,7 @@
 # Vue project
 front/dist/
 back/tmp/
+back/database/sqlite.db
 
 # Logs
 logs

@@ -1,7 +1,8 @@
+require("dotenv").config()
 const sqlite3 = require("sqlite3").verbose()
-const DB_FILE = "./database.db"
+const dbFile = process.env.DATABASE_FILE
 
-module.exports = new sqlite3.Database(DB_FILE, (err) => {
+module.exports = new sqlite3.Database(dbFile, (err) => {
     if (err) {
         return console.error(err.messagae)
     }
