@@ -1,5 +1,6 @@
 # Vue project
 front/dist/
+back/tmp/
 
 # Logs
 logs
