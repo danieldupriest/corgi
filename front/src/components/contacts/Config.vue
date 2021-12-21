@@ -1,12 +1,57 @@
 <template>
   <div>
-    <h2>Configure Merge</h2>
+    <h2>Configure Contact Merge</h2>
     <div v-if="userFields">
       <p>
-        {{ userFields.length }} columns were found. Select the source for each
-        field you wish to import. Fields for which there is no data can be set
-        to "Ignore".
+        Please select the field(s) you wish to use to uniquely identify rows,
+        and detect duplicate entries. First and last names, or street no. and
+        address are good combinations.
       </p>
+      <h3>Fields to match</h3>
+      <div class="fields-to-match" v-for="field in dbFields" :key="field.name">
+        <input
+          :id="field.name + '-match'"
+          type="checkbox"
+          v-model="config.matchFields[field.name]"
+          true-value="yes"
+          false-value="no"
+        />
+        <label :for="field.name + '-match'">
+          {{ field.pretty_name }}
+        </label>
+      </div>
+      <h3>Field merge options</h3>
+      <p>
+        Next, choose which fields in your file should be used to populate the
+        database fields. If your header names are somewhat similar to the
+        database's (shown in bold), they may be automatically detected by the
+        application.
+      </p>
+      <p>
+        Finally, choose the merge method for each field. This will determine
+        what actions will happen automatically, and how duplicate entries will
+        be handled. The following options are available:
+      </p>
+      <p>Some sample rows from the uploaded CSV file are shown below</p>
+      <ul>
+        <li>
+          Auto - If one faield contains text and one doesn't, the text will be
+          used to fill the field.
+        </li>
+        <li>Use existing - The value in the existing row will be kept.</li>
+        <li>
+          Use new - The value in the newly imported row will overwrite the
+          existing.
+        </li>
+        <li>
+          Custom - Ignore both existing and new field values and overwrite with
+          this one instead.
+        </li>
+        <li>
+          Add tag - For comma-separated list fields (such as 'tags' and
+          'votes'), this will add one or more tags to the list.
+        </li>
+      </ul>
       <form>
         <table class="styled-table">
           <tbody>
@@ -38,6 +83,7 @@
                   :id="dbField.name + '-auto'"
                   :name="dbField.name + '-merge-method'"
                   value="auto"
+                  v-model="config.mergeMethods[dbField.name]"
                   checked
                 />
                 <label :for="dbField.name + '-auto'">Auto</label>
@@ -47,15 +93,16 @@
                   :id="dbField.name + '-use-existing'"
                   :name="dbField.name + '-merge-method'"
                   value="use-existing"
+                  v-model="config.mergeMethods[dbField.name]"
                 />
-                <label :for="dbField.name + '-user-existing'"
-                  >Use existing</label
+                <label :for="dbField.name + '-use-existing'">Use existing</label
                 ><br />
                 <input
                   type="radio"
                   :id="dbField.name + '-use-new'"
                   :name="dbField.name + '-merge-method'"
                   value="use-new"
+                  v-model="config.mergeMethods[dbField.name]"
                 />
                 <label :for="dbField.name + '-use-new'">Use new</label>
                 <br />
@@ -64,35 +111,44 @@
                   :id="dbField.name + '-custom'"
                   :name="dbField.name + '-merge-method'"
                   value="custom"
+                  v-model="config.mergeMethods[dbField.name]"
                 />
-                <label :for="dbField.name + '-custom'">Custom</label>
+                <label
+                  v-if="dbField.type == 'tags'"
+                  :for="dbField.name + '-custom'"
+                  >Add tag</label
+                >
+                <label v-else :for="dbField.name + '-custom'">Custom</label>
                 <input
                   class="custom-field"
                   type="text"
                   :name="dbField.name + '-custom'"
+                  placeholder="custom value"
+                  v-model="config.customFields[dbField.name]"
                 />
               </td>
             </tr>
           </tbody>
         </table>
-        <h3>Sample rows from CSV file</h3>
-        <table class="styled-table">
-          <thead>
-            <tr>
-              <th v-for="(userField, index) in userFields" :key="index">
-                {{ userField }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(contact, index1) in contacts" :key="index1">
-              <td v-for="(userField, index2) in userFields" :key="index2">
-                {{ contact[userField] }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <button type="submit">Merge</button>
       </form>
+      <h3>Sample rows from CSV file</h3>
+      <table class="styled-table">
+        <thead>
+          <tr>
+            <th v-for="(userField, index) in userFields" :key="index">
+              {{ userField }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(contact, index1) in contacts" :key="index1">
+            <td v-for="(userField, index2) in userFields" :key="index2">
+              {{ contact[userField] }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -110,6 +166,9 @@ export default {
       dbFields: fields,
       userFields: null,
       config: {
+        customFields: {},
+        matchFields: [],
+        mergeMethods: {},
         sourceFields: {},
       },
     };
@@ -138,11 +197,19 @@ export default {
         console.log(`Set config.sourceFields.${dbField.name} to ${guess}`);
       });
     },
+    initializeConfig() {
+      fields.forEach((field) => {
+        const name = field.name;
+        this.config.customFields[name] = "";
+        this.config.mergeMethods[name] = "auto";
+        this.config.matchFields[name] = "no";
+      });
+    },
   },
   mounted() {
     const file = this.$route.params.file;
-    console.debug(`Configuring import of file ${file}.`);
     this.load(file);
+    this.initializeConfig();
   },
 };
 </script>

@@ -74,4 +74,14 @@ exports.fields = [
         pretty_name: "Tags",
         type: "tags",
     },
+    {
+        name: "votes",
+        pretty_name: "Votes",
+        type: "tags",
+    },
+    {
+        name: "donations",
+        pretty_name: "Donations",
+        type: "integer",
+    },
 ];
