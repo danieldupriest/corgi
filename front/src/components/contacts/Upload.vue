@@ -1,39 +1,55 @@
 <template>
   <div>
-    <input type="file" @change="updateFile" ref="file">
+    <h2>Contact Import</h2>
+    <p>
+      Export your contact list as a CSV (comma-separated value) file, including
+      headers, and select it below.
+    </p>
+    <input type="file" @change="updateFile" ref="file" />
     <button @click="submitFile">Upload</button>
-    <p ref="result"></p>
   </div>
 </template>
 
 <script>
-const axios = require("axios")
+const axios = require("axios");
 
 export default {
-  name: 'Upload',
-  props: {},
+  name: "Upload",
   data() {
     return {
-      contacts: null
-    }
+      contacts: null,
+    };
   },
   methods: {
     updateFile() {
-      this.contacts = "Hi"
-      this.contacts = this.$refs.file.files[0]
+      this.contacts = "Hi";
+      this.contacts = this.$refs.file.files[0];
     },
     submitFile() {
-      const formData = new FormData()
-      formData.append('file', this.contacts)
-      const headers = { 'Content-Type': 'multipart/form-data' }
-      axios.post('http://localhost:3000/api/contacts/upload', formData, { headers }).then((res) => {       
-        console.log(res.data)
-        this.$refs.result.innerHTML = res.data.message + " : " + res.data.rows
-      });
-    }
-  }
-}
+      const formData = new FormData();
+      formData.append("file", this.contacts);
+      axios
+        .post("http://localhost:3000/api/contacts/upload", formData)
+        .then((res) => {
+          if (res.status == 200) {
+            console.debug(`Loaded file: ${file}`);
+            const file = res.data.file;
+            this.$router.push("/contacts/config/" + file);
+          }
+          this.headers = res.data.headers;
+          this.contacts = res.data.contacts;
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    },
+  },
+};
 </script>
 
 <style scoped>
+input {
+  display: block;
+  margin-bottom: 1rem;
+}
 </style>
