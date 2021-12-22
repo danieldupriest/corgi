@@ -1,3 +1,5 @@
+const db = require("./database");
+
 // Dataclass to store contact information
 module.exports = class Contact {
     // Creates a new contact
@@ -47,7 +49,7 @@ module.exports = class Contact {
     }
 
     // Asynchronously returns a sorted list of all contacts
-    static fetchAll() {
+    static findAll() {
         return new Promise((resolve, reject) => {
             db.all(
                 `SELECT * FROM contacts ORDER BY last_name, first_name_or_names DESC`,
@@ -84,6 +86,45 @@ module.exports = class Contact {
                         results.push(result);
                     }
                     resolve(results);
+                }
+            );
+        });
+    }
+
+    // Asynchronously returns a sorted list of all contacts
+    static findById(contactId) {
+        return new Promise((resolve, reject) => {
+            db.get(
+                `SELECT * FROM contacts WHERE id = ?`,
+                [contactId],
+                (err, row) => {
+                    if (err) {
+                        reject(
+                            new Error(
+                                `Error retrieving contact: ${err.message}`
+                            )
+                        );
+                    }
+                    let result = new Contact(
+                        row["first_name_or_names"],
+                        row["last_name"],
+                        row["date_of_birth"],
+                        row["address_number"],
+                        row["address_street"],
+                        row["city"],
+                        row["state"],
+                        row["zip_code"],
+                        row["precinct"],
+                        row["subdivision"],
+                        row["email"],
+                        row["phone"],
+                        row["job"],
+                        row["notes"],
+                        row["tags"],
+                        row["votes"],
+                        row["donation"]
+                    );
+                    resolve(result);
                 }
             );
         });
@@ -144,7 +185,7 @@ module.exports = class Contact {
                     if (err) {
                         reject(new Error(`Error getting id: ${err.message}`));
                     }
-                    this.id = result;
+                    this.id = result["last_insert_rowid()"];
                     resolve(this);
                 });
             });

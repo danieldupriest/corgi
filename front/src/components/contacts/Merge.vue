@@ -133,15 +133,7 @@
             </tr>
           </tbody>
         </table>
-        <button @click="saveConfig">Submit</button>
-        <div id="estimates" v-if="newImports != null">
-          <h3>Estimated result of configuration</h3>
-          <ul>
-            <li>{{ newImports }} contact(s) will be newly imported.</li>
-            <li>{{ autoMerges }} contact(s) will be automatically merged.</li>
-            <li>{{ manualMerges }} contact(s) will require manual merging.</li>
-          </ul>
-        </div>
+        <button @click="submitForm">Submit</button>
       </form>
       <h3>Sample rows from CSV file</h3>
       <table class="styled-table">
@@ -153,7 +145,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(contact, index1) in contacts.slice(0, 10)" :key="index1">
+          <tr v-for="(contact, index1) in contacts" :key="index1">
             <td v-for="(userField, index2) in userFields" :key="index2">
               {{ contact[userField] }}
             </td>
@@ -165,7 +157,7 @@
 </template>
 
 <script>
-const axios = require("axios").default;
+const axios = require("axios");
 const FuzzyMatching = require("fuzzy-matching");
 const { fields } = require("../fields");
 
@@ -176,13 +168,10 @@ export default {
       contacts: null,
       dbFields: fields,
       mergeId: null,
-      newImports: null,
-      autoMerges: null,
-      manualMerges: null,
       userFields: null,
       config: {
         customFields: {},
-        matchFields: {},
+        matchFields: [],
         mergeMethods: {},
         sourceFields: {},
       },
@@ -195,7 +184,7 @@ export default {
       }
       return false;
     },
-    loadHeadersAndSampleContacts() {
+    load() {
       const url =
         process.env.VUE_APP_BASE_URL +
         "/api/contacts/upload/" +
@@ -204,6 +193,9 @@ export default {
       axios
         .get(url)
         .then((res) => {
+          if (res.status != 200) {
+            return console.error(`Unexpected status code.`);
+          }
           this.userFields = res.data.headers;
           this.contacts = res.data.contacts;
           this.guessSourceFields();
@@ -227,7 +219,7 @@ export default {
         this.config.matchFields[name] = "no";
       });
     },
-    async saveConfig() {
+    submitForm() {
       if (!this.atLeastOneMatchSelected()) {
         return console.log(
           "At least one field must be selected for matching before you can merge."
@@ -235,32 +227,28 @@ export default {
       }
       const url =
         process.env.VUE_APP_BASE_URL +
-        "/api/contacts/upload/" +
+        "/api/contacts/" +
         this.mergeId +
-        "/configure";
-      axios.post(url, { config: this.config }).then((result) => {
-        console.log(result.data);
-        this.newImports = result.data.newImports;
-        this.autoMerges = result.data.autoMerges;
-        this.manualMerges = result.data.manualMerges;
-        window.setTimeout(() => {
-          const estimates = document.getElementById("estimates");
-          estimates.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
-      });
-    },
-    async beginMerge() {
-      await this.saveConfig();
-      this.$router.push("/contacts/upload/" + this.mergeId + "/merge");
+        "/merge";
+      axios
+        .post(url, this.config)
+        .then((res) => {
+          if (res.status != 200) {
+            return console.error(`Unexpected status code.`);
+          }
+        })
+        .catch((err) => {
+          throw new Error(`Problem connecting to URL ${URL}:` + err);
+        });
     },
   },
   mounted() {
     this.mergeId = this.$route.params.mergeId;
-    this.loadHeadersAndSampleContacts();
+    this.load();
     this.initializeConfig();
   },
 };
-</script>
+</script>/
 
 <style scoped>
 .field-selector {

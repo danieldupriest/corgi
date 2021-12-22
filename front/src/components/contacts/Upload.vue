@@ -29,12 +29,11 @@ export default {
       const formData = new FormData();
       formData.append("file", this.contacts);
       axios
-        .post("http://localhost:3000/api/contacts/upload", formData)
+        .post(process.env.VUE_APP_BASE_URL + "/api/contacts/upload", formData)
         .then((res) => {
-          if (res.status == 200) {
-            console.debug(`Loaded file: ${file}`);
-            const file = res.data.file;
-            this.$router.push("/contacts/config/" + file);
+          if (res.status == 201) {
+            const mergeId = res.data.mergeId;
+            this.$router.push("/contacts/upload/" + mergeId + "/config");
           }
           this.headers = res.data.headers;
           this.contacts = res.data.contacts;

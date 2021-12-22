@@ -2,7 +2,8 @@
   <div>
     <div id="nav">
       <router-link to="/">Home</router-link> |
-      <router-link to="/contacts/upload">Upload contacts</router-link>
+      <router-link to="/contacts">Contacts</router-link> |
+      <router-link to="/contacts/upload">Upload</router-link>
     </div>
     <router-view />
   </div>

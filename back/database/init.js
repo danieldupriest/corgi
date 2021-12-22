@@ -38,49 +38,17 @@ function initialize() {
                     throw new Error(err.msg);
                 }
             }
-        )
-            .run(
-                `CREATE TABLE IF NOT EXISTS votes
+        ).run(
+            `CREATE TABLE IF NOT EXISTS merges
             (id INTEGER PRIMARY KEY AUTOINCREMENT,
-            contact_id INTEGER,
-            year INTEGER,
-            level TEXT,
-            FOREIGN KEY (contact_id)
-            REFERENCES contacts (id)
-            ON DELETE CASCADE)`,
-                (err) => {
-                    if (err) {
-                        throw new Error(err.msg);
-                    }
+            file TEXT,
+            config TEXT)`,
+            (err) => {
+                if (err) {
+                    throw new Error(err.msg);
                 }
-            )
-            .run(
-                `CREATE TABLE IF NOT EXISTS donations
-            (id INTEGER PRIMARY KEY AUTOINCREMENT,
-            contact_id INTEGER,
-            date INTEGER,
-            amount INTEGER,
-            FOREIGN KEY (contact_id)
-            REFERENCES contacts (id)
-            ON DELETE CASCADE)`,
-                (err) => {
-                    if (err) {
-                        throw new Error(err.msg);
-                    }
-                }
-            )
-            .run(
-                `CREATE TABLE IF NOT EXISTS fields
-            (id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            pretty_name TEXT,
-            type TEXT)`,
-                (err) => {
-                    if (err) {
-                        throw new Error(err.msg);
-                    }
-                }
-            );
+            }
+        );
     });
     db.close((err) => {
         if (err) {
