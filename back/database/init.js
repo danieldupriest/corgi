@@ -1,5 +1,6 @@
 require("dotenv").config();
 const fs = require("fs");
+const { dbFields } = require("./fields.js");
 
 const databaseFile = process.env.DATABASE_FILE;
 
@@ -11,28 +12,14 @@ function initialize() {
     }
 
     const db = require("./database");
-
+    let initFields = [];
+    dbFields.forEach((field) => {
+        initFields.push(`${field.name} ${field.dbFieldType}`);
+    });
     db.serialize(() => {
         db.run(
             `CREATE TABLE IF NOT EXISTS contacts
-            (id INTEGER PRIMARY KEY AUTOINCREMENT,
-            first_name_or_names TEXT,
-            last_name TEXT,
-            date_of_birth INTEGER,
-            address_number TEXT,
-            address_street TEXT,
-            city TEXT,
-            state TEXT,
-            zip_code TEXT,
-            precinct TEXT,
-            subdivision TEXT,
-            email TEXT,
-            phone TEXT,
-            job TEXT,
-            tags TEXT,
-            notes TEXT,
-            votes TEXT,
-            donation TEXT)`,
+            (${initFields.join(", ")});`,
             (err) => {
                 if (err) {
                     throw new Error(err.msg);
@@ -42,7 +29,8 @@ function initialize() {
             `CREATE TABLE IF NOT EXISTS merges
             (id INTEGER PRIMARY KEY AUTOINCREMENT,
             file TEXT,
-            config TEXT)`,
+            config TEXT,
+            duplicates TEXT)`,
             (err) => {
                 if (err) {
                     throw new Error(err.msg);

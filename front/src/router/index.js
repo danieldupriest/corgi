@@ -13,7 +13,7 @@ const routes = [
     },
     {
         path: "/contacts",
-        name: "Contacts",
+        name: "ListContacts",
         component: ListContacts,
     },
     {

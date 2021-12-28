@@ -1,18 +1,18 @@
 <template>
   <div>
     <h2>Contacts</h2>
-    <table v-if="contacts.length > 0" class="styled-table">
+    <table v-if="contacts" class="styled-table">
       <thead>
         <tr>
-          <th v-for="(field, index) in fields" :key="index">
+          <th v-for="(field, index) in dbFields" :key="index">
             {{ field.pretty_name }}
           </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(contact, index1) in contacts" :key="index1">
-          <td v-for="(field, index2) in fields" :key="index2">
-            {{ contact[field.name] }}
+          <td v-for="(field, index2) in dbFields" :key="index2">
+            {{ prettyField(field, contact[field.name]) }}
           </td>
         </tr>
       </tbody>
@@ -23,23 +23,33 @@
 
 <script>
 const axios = require("axios");
-const fields = require("../fields");
+const { jsonFieldToDisplayField } = require("../../utils.js");
 
 export default {
-  name: "Upload",
+  name: "ListContacts",
   data() {
     return {
       contacts: null,
-      fields: fields,
+      dbFields: null,
     };
   },
   methods: {
-    loadContacts() {
+    prettyField(field, input) {
+      return jsonFieldToDisplayField(field, input);
+    },
+    load() {
       const url = process.env.VUE_APP_BASE_URL + "/api/contacts";
+      console.log(url);
       axios
         .get(url)
         .then((res) => {
           this.contacts = res.data.contacts;
+          this.dbFields = res.data.dbFields;
+          /*this.contacts.forEach((contact) => {
+            this.dbFields.forEach((field) => {
+              console.log(contact[field.name]);
+            });
+          });*/
         })
         .catch((err) => {
           console.error(err);
@@ -47,7 +57,8 @@ export default {
     },
   },
   mounted() {
-    this.loadContacts();
+    console.log("Mounted list");
+    this.load();
   },
 };
 </script>

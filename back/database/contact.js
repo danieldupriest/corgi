@@ -1,93 +1,41 @@
 const db = require("./database");
+const { dbFields } = require("./fields");
 
-// Dataclass to store contact information
+// Dataclass to store contact information. args should be an object containing user text fields
 module.exports = class Contact {
     // Creates a new contact
-    constructor(
-        first_name_or_names = "",
-        last_name = "",
-        date_of_birth = "",
-        address_number = "",
-        address_street = "",
-        city = "",
-        state = "",
-        zip_code = "",
-        precinct = "",
-        subdivision = "",
-        email = "",
-        phone = "",
-        job = "",
-        notes = "",
-        tags = "",
-        votes = "",
-        donation = 0,
-        id = 0
-    ) {
-        (this.first_name_or_names = first_name_or_names),
-            (this.last_name = last_name),
-            (this.date_of_birth = date_of_birth),
-            (this.address_number = address_number),
-            (this.address_street = address_street),
-            (this.city = city),
-            (this.state = state),
-            (this.zip_code = zip_code),
-            (this.precinct = precinct),
-            (this.subdivision = subdivision),
-            (this.email = email),
-            (this.phone = phone),
-            (this.job = job),
-            (this.notes = notes),
-            (this.tags = tags),
-            (this.votes = votes),
-            (this.donation = donation),
-            (this.id = id);
+    constructor(args = {}) {
+        for (const field of dbFields) {
+            this[field.name] = field.defaultValue;
+            if (args[field.name]) {
+                this[field.name] = args[field.name];
+            } else {
+                this[field.name] = field.defaultValue;
+            }
+        }
     }
 
     // Converts a contact to string representation
     toString() {
-        return `${this.first_name_or_names} ${this.last_name}`;
+        return `Contact ${this.id}: ${this.first_name_or_names} ${this.last_name}`;
     }
 
     // Asynchronously returns a sorted list of all contacts
     static findAll() {
         return new Promise((resolve, reject) => {
-            db.all(
-                `SELECT * FROM contacts ORDER BY last_name, first_name_or_names DESC`,
-                [],
-                (err, rows) => {
-                    if (err) {
-                        reject(
-                            new Error(
-                                `Error retrieving contacts: ${err.message}`
-                            )
-                        );
-                    }
-                    let results = [];
-                    for (const row of rows) {
-                        let result = new Contact(
-                            row["first_name_or_names"],
-                            row["last_name"],
-                            row["date_of_birth"],
-                            row["address_number"],
-                            row["address_street"],
-                            row["city"],
-                            row["state"],
-                            row["zip_code"],
-                            row["precinct"],
-                            row["subdivision"],
-                            row["email"],
-                            row["phone"],
-                            row["job"],
-                            row["notes"],
-                            row["tags"],
-                            row["votes"],
-                            row["donation"]
-                        );
-                        results.push(result);
-                    }
-                    resolve(results);
+            db.all(`SELECT * FROM contacts`, [], (err, rows) => {
+                if (err) {
+                    reject(
+                        new Error(`Error retrieving contacts: ${err.message}`)
+                    );
                 }
-            );
+                let results = [];
+                for (const row of rows) {
+                    const contact = this.dbRowToContact(row);
+                    results.push(contact);
+                }
+                resolve(results);
+            });
         });
     }
 
@@ -105,26 +53,8 @@ module.exports = class Contact {
                             )
                         );
                     }
-                    let result = new Contact(
-                        row["first_name_or_names"],
-                        row["last_name"],
-                        row["date_of_birth"],
-                        row["address_number"],
-                        row["address_street"],
-                        row["city"],
-                        row["state"],
-                        row["zip_code"],
-                        row["precinct"],
-                        row["subdivision"],
-                        row["email"],
-                        row["phone"],
-                        row["job"],
-                        row["notes"],
-                        row["tags"],
-                        row["votes"],
-                        row["donation"]
-                    );
-                    resolve(result);
+                    const contact = this.dbRowToContact(row);
+                    resolve(contact);
                 }
             );
         });
@@ -134,44 +64,26 @@ module.exports = class Contact {
     save() {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
+                let insertFields = [];
+                let insertQuestions = [];
+                let insertValues = [];
+                for (const field of dbFields) {
+                    if (field.readOnly) {
+                        continue;
+                    }
+                    insertFields.push(field.name);
+                    insertQuestions.push("?");
+                    const value = this.contactFieldToDbField(
+                        field,
+                        this[field.name]
+                    );
+                    insertValues.push(value);
+                }
                 db.run(
-                    `INSERT INTO contacts (
-                    first_name_or_names,
-                    last_name,
-                    date_of_birth,
-                    address_number,
-                    address_street,
-                    city,
-                    state,
-                    zip_code,
-                    precinct,
-                    subdivision,
-                    email,
-                    phone,
-                    job,
-                    notes,
-                    tags,
-                    votes,
-                    donation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        this.first_name_or_names,
-                        this.last_name,
-                        this.date_of_birth,
-                        this.address_number,
-                        this.address_street,
-                        this.city,
-                        this.state,
-                        this.zip_code,
-                        this.precinct,
-                        this.subdivision,
-                        this.email,
-                        this.phone,
-                        this.job,
-                        this.notes,
-                        this.tags,
-                        this.votes,
-                        this.donation,
-                    ],
+                    `INSERT INTO contacts (${insertFields.join(
+                        ", "
+                    )}) VALUES (${insertQuestions.join(", ")})`,
+                    insertValues,
                     (err) => {
                         if (err) {
                             reject(
@@ -190,5 +102,89 @@ module.exports = class Contact {
                 });
             });
         });
+    }
+
+    // Asynchronously updates a Contact in the database
+    update(args = {}) {
+        if (Object.keys(args).length === 0) {
+            console.debug("No args passed to update. Returning.");
+            return;
+        }
+        return new Promise((resolve, reject) => {
+            db.serialize(() => {
+                let setStatements = [];
+                let insertValues = [];
+                for (const field of dbFields) {
+                    if (field.readOnly) {
+                        continue;
+                    }
+                    if (args[field.name] != undefined) {
+                        setStatements.push(`${field.name} = ?`);
+                        const newValue = this.contactFieldToDbField(
+                            field,
+                            args[field.name]
+                        );
+                        insertValues.push(newValue);
+                    }
+                }
+                insertValues.push(this.id);
+                db.run(
+                    `UPDATE contacts SET ${setStatements.join(
+                        ", "
+                    )} WHERE id = ?;`,
+                    insertValues,
+                    (err) => {
+                        if (err) {
+                            reject(
+                                new Error(
+                                    `Error updating contact in database: ${err.message}`
+                                )
+                            );
+                        }
+                        resolve();
+                    }
+                );
+            });
+        });
+    }
+
+    contactFieldToDbField(field, value) {
+        if (field.type == "text" || field.type == "integer") {
+            return value;
+        } else if (field.type == "tags") {
+            const stringified = JSON.stringify(value);
+            return stringified;
+        } else if (field.type == "date") {
+            if (this[field.name] == null) {
+                return null;
+            } else {
+                return value.getTime();
+            }
+        }
+    }
+
+    static dbRowToContact(row) {
+        let args = {};
+        for (const field of dbFields) {
+            if (row[field.name]) {
+                if (field.type == "text" || field.type == "integer") {
+                    args[field.name] = row[field.name];
+                } else if (field.type == "tags") {
+                    const tagList = JSON.parse(row[field.name]);
+                    args[field.name] = tagList;
+                } else if (field.type == "date") {
+                    if (row[field.name] == null) {
+                        args[field.name] = null;
+                    } else {
+                        const unixSeconds = row[field.name];
+                        const date = new Date(unixSeconds);
+                        args[field.name] = date;
+                    }
+                } else {
+                    args[field.name] = field.defaultValue;
+                }
+            }
+        }
+        return new Contact(args);
     }
 };

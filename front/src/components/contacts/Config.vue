@@ -8,7 +8,11 @@
         address are good combinations.
       </p>
       <h3>Fields to match</h3>
-      <div class="fields-to-match" v-for="field in dbFields" :key="field.name">
+      <div
+        class="fields-to-match"
+        v-for="field in filteredDbFields"
+        :key="field.name"
+      >
         <input
           :id="field.name + '-match'"
           type="checkbox"
@@ -59,7 +63,7 @@
         <table class="styled-table">
           <tbody>
             <tr>
-              <td v-for="(dbField, index) in dbFields" :key="index">
+              <td v-for="(dbField, index) in filteredDbFields" :key="index">
                 <h4>
                   {{ dbField.pretty_name }}
                 </h4>
@@ -80,60 +84,67 @@
                     {{ userField }}
                   </option>
                 </select>
-                <div>Merge method:</div>
-                <input
-                  type="radio"
-                  :id="dbField.name + '-auto'"
-                  :name="dbField.name + '-merge-method'"
-                  value="auto"
-                  v-model="config.mergeMethods[dbField.name]"
-                  checked
-                />
-                <label :for="dbField.name + '-auto'">Auto</label>
-                <br />
-                <input
-                  type="radio"
-                  :id="dbField.name + '-use-existing'"
-                  :name="dbField.name + '-merge-method'"
-                  value="use-existing"
-                  v-model="config.mergeMethods[dbField.name]"
-                />
-                <label :for="dbField.name + '-use-existing'">Use existing</label
-                ><br />
-                <input
-                  type="radio"
-                  :id="dbField.name + '-use-new'"
-                  :name="dbField.name + '-merge-method'"
-                  value="use-new"
-                  v-model="config.mergeMethods[dbField.name]"
-                />
-                <label :for="dbField.name + '-use-new'">Use new</label>
-                <br />
-                <input
-                  type="radio"
-                  :id="dbField.name + '-custom'"
-                  :name="dbField.name + '-merge-method'"
-                  value="custom"
-                  v-model="config.mergeMethods[dbField.name]"
-                />
-                <label
-                  v-if="dbField.type == 'tags'"
-                  :for="dbField.name + '-custom'"
-                  >Add tag</label
+                <div
+                  class="method"
+                  v-bind:class="{ hidden: hideField(dbField.name) }"
                 >
-                <label v-else :for="dbField.name + '-custom'">Custom</label>
-                <input
-                  class="custom-field"
-                  type="text"
-                  :name="dbField.name + '-custom'"
-                  placeholder="custom value"
-                  v-model="config.customFields[dbField.name]"
-                />
+                  <div>Merge method:</div>
+                  <input
+                    type="radio"
+                    :id="dbField.name + '-auto'"
+                    :name="dbField.name + '-merge-method'"
+                    value="auto"
+                    v-model="config.mergeMethods[dbField.name]"
+                    checked
+                  />
+                  <label :for="dbField.name + '-auto'">Auto</label>
+                  <br />
+                  <input
+                    type="radio"
+                    :id="dbField.name + '-use-existing'"
+                    :name="dbField.name + '-merge-method'"
+                    value="use-existing"
+                    v-model="config.mergeMethods[dbField.name]"
+                  />
+                  <label :for="dbField.name + '-use-existing'"
+                    >Use existing</label
+                  ><br />
+                  <input
+                    type="radio"
+                    :id="dbField.name + '-use-new'"
+                    :name="dbField.name + '-merge-method'"
+                    value="use-new"
+                    v-model="config.mergeMethods[dbField.name]"
+                  />
+                  <label :for="dbField.name + '-use-new'">Use new</label>
+                  <br />
+                  <input
+                    type="radio"
+                    :id="dbField.name + '-custom'"
+                    :name="dbField.name + '-merge-method'"
+                    value="custom"
+                    v-model="config.mergeMethods[dbField.name]"
+                  />
+                  <label
+                    v-if="dbField.type == 'tags'"
+                    :for="dbField.name + '-custom'"
+                    >Add tag(s)</label
+                  >
+                  <label v-else :for="dbField.name + '-custom'">Custom</label>
+                  <input
+                    class="custom-field"
+                    type="text"
+                    :name="dbField.name + '-custom'"
+                    placeholder="custom value"
+                    v-model="config.customFields[dbField.name]"
+                  />
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
-        <button @click="saveConfig">Submit</button>
+        <button @click="saveConfigAndGetEstimates">Preview</button>
+        <button @click="beginMerge">Merge</button>
         <div id="estimates" v-if="newImports != null">
           <h3>Estimated result of configuration</h3>
           <ul>
@@ -147,14 +158,14 @@
       <table class="styled-table">
         <thead>
           <tr>
-            <th v-for="(userField, index) in userFields" :key="index">
+            <th v-for="(userField, index) in filteredUserFields" :key="index">
               {{ userField }}
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(contact, index1) in contacts.slice(0, 10)" :key="index1">
-            <td v-for="(userField, index2) in userFields" :key="index2">
+            <td v-for="(userField, index2) in filteredUserFields" :key="index2">
               {{ contact[userField] }}
             </td>
           </tr>
@@ -167,14 +178,13 @@
 <script>
 const axios = require("axios").default;
 const FuzzyMatching = require("fuzzy-matching");
-const { fields } = require("../fields");
 
 export default {
   name: "Config",
   data() {
     return {
       contacts: null,
-      dbFields: fields,
+      dbFields: null,
       mergeId: null,
       newImports: null,
       autoMerges: null,
@@ -183,10 +193,31 @@ export default {
       config: {
         customFields: {},
         matchFields: {},
+        matchFieldsArray: [],
         mergeMethods: {},
         sourceFields: {},
       },
     };
+  },
+  computed: {
+    filteredDbFields() {
+      const result = [];
+      this.dbFields.forEach((field) => {
+        if (!field.readOnly) {
+          result.push(field);
+        }
+      });
+      return result;
+    },
+    filteredUserFields() {
+      const result = [];
+      this.userFields.forEach((field, index) => {
+        if (index != 0) {
+          result.push(field);
+        }
+      });
+      return result;
+    },
   },
   methods: {
     atLeastOneMatchSelected() {
@@ -204,9 +235,11 @@ export default {
       axios
         .get(url)
         .then((res) => {
-          this.userFields = res.data.headers;
+          this.dbFields = res.data.dbFields;
+          this.userFields = ["none"].concat(res.data.headers);
           this.contacts = res.data.contacts;
           this.guessSourceFields();
+          this.initializeConfig();
         })
         .catch((err) => {
           console.error(err);
@@ -215,49 +248,72 @@ export default {
     guessSourceFields() {
       this.dbFields.forEach((dbField) => {
         const fm = new FuzzyMatching(this.userFields);
-        const guess = fm.get(dbField.pretty_name).value;
+        let guess = fm.get(dbField.pretty_name).value;
+        if (guess == null) {
+          guess = this.userFields[0];
+        }
         this.config.sourceFields[dbField.name] = guess;
       });
     },
     initializeConfig() {
-      fields.forEach((field) => {
+      this.dbFields.forEach((field) => {
         const name = field.name;
         this.config.customFields[name] = "";
         this.config.mergeMethods[name] = "auto";
         this.config.matchFields[name] = "no";
       });
     },
-    async saveConfig() {
+    async saveConfigAndGetEstimates(showEstimates = true) {
       if (!this.atLeastOneMatchSelected()) {
         return console.log(
           "At least one field must be selected for matching before you can merge."
         );
+      }
+      this.config.matchFieldsArray = [];
+      for (const [key, value] of Object.entries(this.config.matchFields)) {
+        if (value == "yes") {
+          this.config.matchFieldsArray.push(key);
+        }
       }
       const url =
         process.env.VUE_APP_BASE_URL +
         "/api/contacts/upload/" +
         this.mergeId +
         "/configure";
-      axios.post(url, { config: this.config }).then((result) => {
-        console.log(result.data);
-        this.newImports = result.data.newImports;
-        this.autoMerges = result.data.autoMerges;
-        this.manualMerges = result.data.manualMerges;
+      const result = await axios.post(url, { config: this.config });
+      this.newImports = result.data.newImports;
+      this.autoMerges = result.data.autoMerges;
+      this.manualMerges = result.data.manualMerges;
+      if (showEstimates) {
         window.setTimeout(() => {
           const estimates = document.getElementById("estimates");
           estimates.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
-      });
+      }
     },
     async beginMerge() {
-      await this.saveConfig();
+      await this.saveConfigAndGetEstimates(false);
+      const url =
+        process.env.VUE_APP_BASE_URL +
+        "/api/contacts/upload/" +
+        this.mergeId +
+        "/merge";
+      await axios.post(url);
       this.$router.push("/contacts/upload/" + this.mergeId + "/merge");
+    },
+    hideField(fieldName) {
+      if (!this.config.sourceFields) {
+        return false;
+      }
+      if (this.config.sourceFields[fieldName] == "none") {
+        return true;
+      }
+      return false;
     },
   },
   mounted() {
     this.mergeId = this.$route.params.mergeId;
     this.loadHeadersAndSampleContacts();
-    this.initializeConfig();
   },
 };
 </script>
@@ -270,5 +326,11 @@ export default {
 }
 .custom-field {
   width: 10rem;
+}
+.hidden {
+  display: none;
+}
+.styled-table td {
+  vertical-align: top;
 }
 </style>

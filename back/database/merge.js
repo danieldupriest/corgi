@@ -3,12 +3,17 @@ const db = require("./database");
 // Dataclass to store contact information
 module.exports = class Merge {
     // Creates a new contact
-    constructor(file, config = null, id = 0) {
+    constructor(file, config = null, duplicates = null, id = 0) {
         this.file = file;
-        if (this.config != null) {
+        if (config != null) {
             this.config = config;
         } else {
             this.config = {};
+        }
+        if (duplicates != null) {
+            this.duplicates = duplicates;
+        } else {
+            this.duplicates = [];
         }
         this.id = id;
     }
@@ -45,7 +50,8 @@ module.exports = class Merge {
                 for (const row of rows) {
                     let result = new Merge(
                         row["file"],
-                        JSON.parse(row["config"])
+                        JSON.parse(row["config"]),
+                        JSON.parse(row["duplicates"])
                     );
                     results.push(result);
                 }
@@ -69,6 +75,7 @@ module.exports = class Merge {
                     let result = new Merge(
                         row["file"],
                         JSON.parse(row["config"]),
+                        JSON.parse(row["duplicates"]),
                         row["id"]
                     );
                     //console.log(result);
@@ -83,8 +90,12 @@ module.exports = class Merge {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
                 db.run(
-                    `INSERT INTO merges (file, config) VALUES (?, ?)`,
-                    [this.file, JSON.stringify(this.config)],
+                    `INSERT INTO merges (file, config, duplicates) VALUES (?, ?, ?)`,
+                    [
+                        this.file,
+                        JSON.stringify(this.config),
+                        JSON.stringify(this.duplicates),
+                    ],
                     (err) => {
                         if (err) {
                             reject(
@@ -119,6 +130,55 @@ module.exports = class Merge {
                         reject(
                             new Error(
                                 `Error writing contact to database: ${err.message}`
+                            )
+                        );
+                    }
+                }
+            );
+            resolve();
+        });
+    }
+
+    // Asynchronously updates a Merge job
+    addDuplicate(number) {
+        this.duplicates.push(number);
+        return new Promise((resolve, reject) => {
+            db.run(
+                `UPDATE merges SET duplicates = ? WHERE id = ?`,
+                [JSON.stringify(this.duplicates), this.id],
+                (err) => {
+                    if (err) {
+                        console.error("Error " + err);
+                        reject(
+                            new Error(
+                                `Error changing merge duplicates in database: ${err.message}`
+                            )
+                        );
+                    }
+                }
+            );
+            resolve();
+        });
+    }
+
+    // Asynchronously updates a Merge job
+    removeDuplicate(number) {
+        const index = this.duplicates.indexOf(number);
+        if (index > -1) {
+            this.duplicates.splice(index, 1);
+        } else {
+            reject(new Error(`Duplicate ${number} not found.`));
+        }
+        return new Promise((resolve, reject) => {
+            db.run(
+                `UPDATE merges SET duplicates = ? WHERE id = ?`,
+                [JSON.stringify(this.duplicates), this.id],
+                (err) => {
+                    if (err) {
+                        console.error("Error " + err);
+                        reject(
+                            new Error(
+                                `Error changing merge duplicates in database: ${err.message}`
                             )
                         );
                     }
