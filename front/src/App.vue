@@ -41,6 +41,11 @@ body {
 a {
   text-decoration: none;
 }
+/*button {
+  background: var(--accent);
+  border-radius: 25px;
+  color: white;
+}*/
 header a:hover {
   border-bottom: 2px solid white;
 }

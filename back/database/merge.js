@@ -139,9 +139,19 @@ module.exports = class Merge {
         });
     }
 
-    // Asynchronously updates a Merge job
-    addDuplicate(number) {
-        this.duplicates.push(number);
+    // Asynchronously adds a duplicate pair (requiring manual merging) to a merge job.
+    addDuplicate(csvRowNumber, existingContactId) {
+        for (const duplicate of this.duplicates) {
+            if (duplicate.csvRowNumber == csvRowNumber) {
+                console.debug(
+                    `A duplicate for csvRowNumber ${csvRowNumber} already exists in this merge job.`
+                );
+                resolve();
+            }
+        }
+        let existingSet = new Set(this.duplicates);
+        existingSet.add({ csvRowNumber, existingContactId });
+        this.duplicates = Array.from(existingSet);
         return new Promise((resolve, reject) => {
             db.run(
                 `UPDATE merges SET duplicates = ? WHERE id = ?`,
@@ -162,12 +172,15 @@ module.exports = class Merge {
     }
 
     // Asynchronously updates a Merge job
-    removeDuplicate(number) {
-        const index = this.duplicates.indexOf(number);
-        if (index > -1) {
-            this.duplicates.splice(index, 1);
-        } else {
-            reject(new Error(`Duplicate ${number} not found.`));
+    removeDuplicate(csvRowNumber) {
+        const count = this.duplicates.length;
+        this.duplicates = this.duplicates.filter((duplicate) => {
+            return duplicate.csvRowNumber != csvRowNumber;
+        });
+        if (this.duplicates.length == count) {
+            throw new Error(
+                `Duplicate with csvRowNumber ${csvRowNumber} not found.`
+            );
         }
         return new Promise((resolve, reject) => {
             db.run(

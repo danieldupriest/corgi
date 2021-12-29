@@ -8,6 +8,7 @@ const {
     getHeaders,
     doMerge,
     getDuplicates,
+    overwrite,
 } = require("../controllers/merge");
 
 router.get("/", getAllContacts);
@@ -16,5 +17,6 @@ router.get("/upload/:mergeId/headers", getHeaders);
 router.post("/upload/:mergeId/configure", configure);
 router.post("/upload/:mergeId/merge", doMerge);
 router.get("/upload/:mergeId/duplicates", getDuplicates);
+router.post("/upload/:mergeId/overwrite/:existingId/with/:newId", overwrite);
 
 module.exports = router;

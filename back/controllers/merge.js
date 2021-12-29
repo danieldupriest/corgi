@@ -2,7 +2,11 @@ require("dotenv").config();
 const Contact = require("../database/contact");
 const Merge = require("../database/merge");
 const { csvToHeadersAndDict } = require("../utils/csv-utils");
-const { dbFields, userTextToContactArg } = require("../database/fields");
+const {
+    dbFields,
+    getFieldByName,
+    userTextToContactArg,
+} = require("../database/fields");
 
 /**
  * Import as many contacts as possible automatically.
@@ -22,27 +26,36 @@ exports.doMerge = async (req, res, next) => {
     const [_, newContacts] = await csvToHeadersAndDict(path);
 
     // Try to merge automatically
+    let newImportCount = 0;
+    let automaticMergeCount = 0;
+    let manualMergeCount = 0;
     for (let i = 0; i < newContacts.length; i++) {
         const newContact = newContacts[i];
         const match = findMatch(newContact, existingContacts, config);
         if (match) {
-            console.debug(`Found match: ${match}`);
             if (automaticMergePossible(newContact, match, config)) {
-                console.debug(`Automatic merge possible.`);
                 try {
                     await autoMergeContact(newContact, match, config);
+                    automaticMergeCount += 1;
                 } catch (err) {
                     console.error(`Error automerging contact: ${err.message}`);
                 }
             } else {
-                console.debug("Adding duplicate for row: " + i);
-                merge.addDuplicate(i);
+                //console.debug("Adding duplicate for row: " + i);
+                merge.addDuplicate(i, match.id);
+                manualMergeCount += 1;
             }
         } else {
             await normalInsertContact(newContact, config);
+            newImportCount += 1;
         }
     }
-    res.status(200).end();
+    const data = {
+        newImportCount,
+        automaticMergeCount,
+        manualMergeCount,
+    };
+    res.status(200).json(data);
 };
 
 async function normalInsertContact(newContact, config) {
@@ -104,6 +117,36 @@ async function autoMergeContact(newContact, existingContact, config) {
             }
         }
     }
+    await existingContact.update(args);
+}
+
+async function manualMergeContact(
+    newContact,
+    existingContact,
+    config,
+    overwrites
+) {
+    // Automatically merge what is possible
+    await autoMergeContact(newContact, existingContact, config);
+
+    // Prepare args for update of manual fields
+    let args = {};
+    const { sourceFields } = config;
+    for (const [dbFieldName, overwrite] of Object.entries(overwrites)) {
+        console.log(`dbFieldName: ${dbFieldName}, overwrite: ${overwrite}`);
+        if (!overwrite) {
+            continue;
+        }
+        const userFieldName = sourceFields[dbFieldName];
+        if (userFieldName == "none") {
+            continue;
+        }
+        const userValue = newContact[userFieldName];
+        const field = getFieldByName(dbFieldName);
+        const newValue = userTextToContactArg(field, userValue);
+        args[dbFieldName] = newValue;
+    }
+    console.log(args);
     await existingContact.update(args);
 }
 
@@ -185,7 +228,7 @@ function automaticMergePossible(newContact, match, config) {
 
         if (mergeMethods[dbFieldName] == "auto") {
             if (fieldsMatch(newValue, existingValue, dbFieldType)) {
-                return true;
+                continue;
             }
             return false;
         }
@@ -193,6 +236,10 @@ function automaticMergePossible(newContact, match, config) {
     return true;
 }
 
+/**
+ * Compares a csv input field value to the value from an existing contact.
+ * Returns true if values match.
+ */
 function fieldsMatch(newValue, existingValue, dbFieldType) {
     if (dbFieldType == "text") {
         if (
@@ -211,7 +258,7 @@ function fieldsMatch(newValue, existingValue, dbFieldType) {
             return true;
         }
     } else if (dbFieldType == "tags") {
-        if (Set(newValue.split(",")) == Set(existingValue)) {
+        if (Set(newValue.split(/[,|, ]/)) == Set(existingValue)) {
             return true;
         }
     }
@@ -219,17 +266,84 @@ function fieldsMatch(newValue, existingValue, dbFieldType) {
 }
 
 exports.getDuplicates = async (req, res, next) => {
-    Contact.findAll()
-        .then((result) => {
-            res.status(200).json({
-                contacts: result,
-                dbFields: dbFields,
-            });
-        })
-        .catch((err) => {
-            err.status = 500;
-            next(err);
-        });
+    // Load merge data and config
+    const mergeId = req.params.mergeId;
+    const merge = await Merge.findById(mergeId);
+    const { config, duplicates, file } = merge;
+    const { matchFieldsArray, mergeMethods, sourceFields } = config;
+
+    // Load csv contacts
+    const path = process.env.TEMP_PATH + file;
+    const [_, newContacts] = await csvToHeadersAndDict(path);
+
+    // Iterate through duplicates and add to result
+    let duplicatesForUser = [];
+    for (const detectedDuplicate of duplicates) {
+        const { csvRowNumber, existingContactId } = detectedDuplicate;
+        let duplicateForUser = {
+            existingId: existingContactId,
+            newId: csvRowNumber,
+            fields: [],
+        };
+        const existingContact = await Contact.findById(existingContactId);
+        const newContact = newContacts[csvRowNumber];
+        for (const field of dbFields) {
+            const newValueSourceField = sourceFields[field.name];
+            if (field.readOnly || newValueSourceField == "none") {
+                continue;
+            }
+            const newValue = newContact[newValueSourceField];
+            const existingValue = existingContact[field.name];
+            const mergeMethod = mergeMethods[field.name];
+            let dupField = {
+                name: field.name,
+                pretty_name: field.pretty_name,
+                type: field.type,
+                different: false,
+                newData: userTextToContactArg(field, newValue),
+                existingData: existingValue,
+            };
+            if (matchFieldsArray.includes(field.name)) {
+                duplicateForUser.fields.push(dupField);
+            } else if (
+                mergeMethod == "auto" &&
+                !fieldsMatch(newValue, existingValue, field.type)
+            ) {
+                dupField.different = true;
+                duplicateForUser.fields.push(dupField);
+            }
+        }
+        duplicatesForUser.push(duplicateForUser);
+    }
+    const data = {
+        duplicates: duplicatesForUser,
+    };
+    res.status(200).json(data);
+};
+
+exports.overwrite = async (req, res, next) => {
+    // Load merge data and config
+    const { overwrites } = req.body;
+    console.log(overwrites);
+    const { mergeId, existingId, newId } = req.params;
+    const merge = await Merge.findById(mergeId);
+    const { config, file } = merge;
+
+    // Load csv contact
+    const path = process.env.TEMP_PATH + file;
+    const [_, newContacts] = await csvToHeadersAndDict(path);
+    const newContact = newContacts[newId];
+
+    // Load db contact
+    const existingContact = await Contact.findById(existingId);
+
+    // Merge
+    await manualMergeContact(newContact, existingContact, config, overwrites);
+
+    // Remove duplicate from merge object
+    await merge.removeDuplicate(newId);
+
+    return res.status(200).end();
 };
 
 exports.getHeaders = async (req, res, next) => {

@@ -1,4 +1,4 @@
-exports.dbFields = [
+const dbFields = [
     {
         name: "id",
         pretty_name: "ID",
@@ -153,12 +153,32 @@ exports.dbFields = [
     },
 ];
 
-exports.userTextToContactArg = (field, input) => {
-    if (field.type == "text") {
-        if (input.length > 1) {
-            return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
+const getFieldByName = (fieldName) => {
+    for (const field of dbFields) {
+        if (field.name == fieldName) {
+            return field;
         }
-        return input;
+    }
+    throw new Error(`Field ${fieldName} not found.`);
+};
+
+const userTextToContactArg = (field, input) => {
+    if (field.type == "text") {
+        if (input == "") {
+            return input;
+        }
+        const words = input.split(" ");
+        try {
+            for (let i = 0; i < words.length; i++) {
+                words[i] =
+                    words[i][0].toUpperCase() +
+                    words[i].substr(1).toLowerCase();
+            }
+        } catch (err) {
+            console.error(`Error processing '${input}'`);
+            console.error(err.message);
+        }
+        return words.join(" ");
     } else if (field.type == "integer") {
         return input;
     } else if (field.type == "tags") {
@@ -173,4 +193,10 @@ exports.userTextToContactArg = (field, input) => {
         }
     }
     throw new Error(`Unsupported field type: ${field.type}`);
+};
+
+module.exports = {
+    dbFields,
+    getFieldByName,
+    userTextToContactArg,
 };
