@@ -1,20 +1,20 @@
 import db from "./database";
-import { Duplicate, MergeConfig } from "../utils/types"
+import { Duplicate, MergeConfig } from "../utils/types";
 
 // Merge object
 export default class Merge {
     id: number;
-    config: MergeConfig;
+    config: MergeConfig | null;
     duplicates: Duplicate[];
     file: string;
 
     // Creates a new merge object
-    constructor(file, config = null, duplicates = null, id = 0) {
+    constructor(file: string, config = null, duplicates = null, id = 0): void {
         this.file = file;
         if (config != null) {
             this.config = config;
         } else {
-            this.config = {};
+            this.config = null;
         }
         if (duplicates != null) {
             this.duplicates = duplicates;
@@ -25,14 +25,14 @@ export default class Merge {
     }
 
     // Converts a merge config to string representation
-    toString() {
+    toString(): string {
         return `Merge ${this.id}`;
     }
 
     // Deletes all merges from database
-    static deleteAll() {
+    static deleteAll(): Promise<void> {
         return new Promise((resolve, reject) => {
-            db.run(`DELETE FROM merges;`, [], (err, rows) => {
+            db.run(`DELETE FROM merges;`, [], (err: any, rows: any[]) => {
                 if (err) {
                     reject(
                         new Error(`Error retrieving merges: ${err.message}`)
@@ -66,7 +66,7 @@ export default class Merge {
         });
     }
 
-    static findById(mergeId): Promise<Merge> {
+    static findById(mergeId: number): Promise<Merge> {
         return new Promise((resolve, reject) => {
             db.get(
                 `SELECT * FROM merges WHERE id = ?`,
@@ -92,7 +92,7 @@ export default class Merge {
     }
 
     // Asynchronously saves a new Merge to the database
-    save() {
+    save(): Promise<Merge> {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
                 db.run(
@@ -123,8 +123,8 @@ export default class Merge {
     }
 
     // Asynchronously updates a Merge job
-    updateConfig(config) {
-        console.debug("Updating config");
+    updateConfig(config: MergeConfig): Promise<Merge> {
+        //console.debug("Updating config");
         this.config = config;
         return new Promise((resolve, reject) => {
             db.run(
@@ -141,24 +141,22 @@ export default class Merge {
                     }
                 }
             );
-            resolve();
+            resolve(this);
         });
     }
 
     // Asynchronously adds a duplicate pair (requiring manual merging) to a merge job.
-    addDuplicate(csvRowNumber: number, existingContactId: number) {
-        for (const duplicate of this.duplicates) {
-            if (duplicate.csvRowNumber == csvRowNumber) {
-                console.debug(
-                    `A duplicate for csvRowNumber ${csvRowNumber} already exists in this merge job.`
-                );
-                resolve();
-            }
-        }
-        let existingSet = new Set(this.duplicates);
-        existingSet.add({ csvRowNumber, existingContactId });
-        this.duplicates = Array.from(existingSet);
+    addDuplicate (csvRowNumber: number, existingContactId: number): Promise<Merge> {
         return new Promise((resolve, reject) => {
+            for (const duplicate of this.duplicates) {
+                if (duplicate.csvRowNumber == csvRowNumber) {
+                    reject(new Error(`A duplicate for csvRowNumber ${csvRowNumber} already exists in this merge job.`));
+                }
+            }
+            let existingSet = new Set(this.duplicates);
+            existingSet.add({ csvRowNumber, existingContactId });
+            this.duplicates = Array.from(existingSet);
+            
             db.run(
                 `UPDATE merges SET duplicates = ? WHERE id = ?`,
                 [JSON.stringify(this.duplicates), this.id],
@@ -173,12 +171,12 @@ export default class Merge {
                     }
                 }
             );
-            resolve();
+            resolve(this);
         });
     }
 
     // Asynchronously updates a Merge job
-    removeDuplicate(csvRowNumber) {
+    removeDuplicate(csvRowNumber: number): Promise<Merge> {
         const count = this.duplicates.length;
         this.duplicates = this.duplicates.filter((duplicate) => {
             return duplicate.csvRowNumber != csvRowNumber;
@@ -203,7 +201,7 @@ export default class Merge {
                     }
                 }
             );
-            resolve();
+            resolve(this);
         });
     }
 };

@@ -66,7 +66,7 @@ export default class Contact {
     }
 
     // Asynchronously saves a new Contact to the database
-    save() {
+    save(): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
                 let insertFields = [];
@@ -110,12 +110,11 @@ export default class Contact {
     }
 
     // Asynchronously updates a Contact in the database
-    update(args: ContactPayload = {}) {
-        if (Object.keys(args).length === 0) {
-            console.debug("No args passed to update. Returning.");
-            return;
-        }
+    update(args: ContactPayload = {}): Promise<Contact> {
         return new Promise((resolve, reject) => {
+            if (Object.keys(args).length === 0) {
+                reject(new Error("No args passed to update. Returning."));
+            }    
             db.serialize(() => {
                 let setStatements = [];
                 let insertValues = [];
