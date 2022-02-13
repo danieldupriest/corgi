@@ -1,8 +1,10 @@
-const dbFields = [
+import { DbField, FieldType } from "../utils/types"
+
+export const dbFields: DbField[] = [
     {
         name: "id",
         pretty_name: "ID",
-        type: "integer",
+        type: FieldType.integer,
         defaultValue: 0,
         dbFieldType: "INTEGER PRIMARY KEY AUTOINCREMENT",
         readOnly: true,
@@ -10,7 +12,7 @@ const dbFields = [
     {
         name: "first_name_or_names",
         pretty_name: "First name(s)",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -18,7 +20,7 @@ const dbFields = [
     {
         name: "last_name",
         pretty_name: "Last name",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -26,7 +28,7 @@ const dbFields = [
     {
         name: "date_of_birth",
         pretty_name: "DOB",
-        type: "date",
+        type: FieldType.date,
         defaultValue: null,
         dbFieldType: "INTEGER",
         readOnly: false,
@@ -34,7 +36,7 @@ const dbFields = [
     {
         name: "address_number",
         pretty_name: "House no.",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -42,7 +44,7 @@ const dbFields = [
     {
         name: "address_street",
         pretty_name: "Street address",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -50,7 +52,7 @@ const dbFields = [
     {
         name: "city",
         pretty_name: "City",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -58,7 +60,7 @@ const dbFields = [
     {
         name: "state",
         pretty_name: "State",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -66,7 +68,7 @@ const dbFields = [
     {
         name: "zip_code",
         pretty_name: "Zip",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -74,7 +76,7 @@ const dbFields = [
     {
         name: "precinct",
         pretty_name: "Precinct",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -82,7 +84,7 @@ const dbFields = [
     {
         name: "subdivision",
         pretty_name: "Subdivision",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -90,7 +92,7 @@ const dbFields = [
     {
         name: "email",
         pretty_name: "E-mail",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -98,7 +100,7 @@ const dbFields = [
     {
         name: "phone",
         pretty_name: "Phone",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -106,7 +108,7 @@ const dbFields = [
     {
         name: "job",
         pretty_name: "Job",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -114,7 +116,7 @@ const dbFields = [
     {
         name: "notes",
         pretty_name: "Notes",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -122,7 +124,7 @@ const dbFields = [
     {
         name: "tags",
         pretty_name: "Tags",
-        type: "tags",
+        type: FieldType.tags,
         defaultValue: [],
         dbFieldType: "TEXT",
         readOnly: false,
@@ -130,7 +132,7 @@ const dbFields = [
     {
         name: "votes",
         pretty_name: "Votes",
-        type: "tags",
+        type: FieldType.tags,
         defaultValue: [],
         dbFieldType: "TEXT",
         readOnly: false,
@@ -138,7 +140,7 @@ const dbFields = [
     {
         name: "donations",
         pretty_name: "Donations",
-        type: "integer",
+        type: FieldType.integer,
         defaultValue: 0,
         dbFieldType: "INTEGER",
         readOnly: false,
@@ -146,14 +148,14 @@ const dbFields = [
     {
         name: "voter_id",
         pretty_name: "Voter ID",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
     },
 ];
 
-const getFieldByName = (fieldName) => {
+export const getFieldByName = (fieldName: string): DbField => {
     for (const field of dbFields) {
         if (field.name == fieldName) {
             return field;
@@ -162,8 +164,8 @@ const getFieldByName = (fieldName) => {
     throw new Error(`Field ${fieldName} not found.`);
 };
 
-const userTextToContactArg = (field, input) => {
-    if (field.type == "text") {
+export const userTextToContactArg = (field: DbField, input: string): any => {
+    if (field.type == FieldType.text) {
         if (input == "") {
             return input;
         }
@@ -172,19 +174,20 @@ const userTextToContactArg = (field, input) => {
             for (let i = 0; i < words.length; i++) {
                 words[i] =
                     words[i][0].toUpperCase() +
-                    words[i].substr(1).toLowerCase();
+                    words[i].substring(1).toLowerCase();
             }
         } catch (err) {
-            console.error(`Error processing '${input}'`);
-            console.error(err.message);
+            console.error(`Error processing '${input}'`)
+            if (err instanceof Error)
+                console.error(err.message);
         }
         return words.join(" ");
-    } else if (field.type == "integer") {
+    } else if (field.type == FieldType.integer) {
         return input;
-    } else if (field.type == "tags") {
+    } else if (field.type == FieldType.tags) {
         const tags = input.split(/[,|, ]+/);
         return tags;
-    } else if (field.type == "date") {
+    } else if (field.type == FieldType.date) {
         if (input == null || input == "") {
             return null;
         } else {
@@ -193,10 +196,4 @@ const userTextToContactArg = (field, input) => {
         }
     }
     throw new Error(`Unsupported field type: ${field.type}`);
-};
-
-module.exports = {
-    dbFields,
-    getFieldByName,
-    userTextToContactArg,
 };

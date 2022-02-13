@@ -1,10 +1,15 @@
-const db = require("./database");
-const { dbFields } = require("./fields");
+import db from "./database";
+import { dbFields } from "./fields";
+import { ContactPayload, DbField, FieldType } from "../utils/types";
 
 // Dataclass to store contact information. args should be an object containing user text fields
-module.exports = class Contact {
+export default class Contact {
+    id: number;
+    [key: string]: any; // Allow for arbitrary data to be added as property
+
     // Creates a new contact
-    constructor(args = {}) {
+    constructor(args: ContactPayload = {}) {
+        this.id = 0;
         for (const field of dbFields) {
             this[field.name] = field.defaultValue;
             if (args[field.name]) {
@@ -16,14 +21,14 @@ module.exports = class Contact {
     }
 
     // Converts a contact to string representation
-    toString() {
+    toString(): string {
         return `Contact ${this.id}: ${this.first_name_or_names} ${this.last_name}`;
     }
 
     // Asynchronously returns a sorted list of all contacts
-    static findAll() {
+    static findAll(): Promise<Contact[]> {
         return new Promise((resolve, reject) => {
-            db.all(`SELECT * FROM contacts`, [], (err, rows) => {
+            db.all(`SELECT * FROM contacts`, [], (err: any, rows: any[]) => {
                 if (err) {
                     reject(
                         new Error(`Error retrieving contacts: ${err.message}`)
@@ -40,12 +45,12 @@ module.exports = class Contact {
     }
 
     // Asynchronously returns a sorted list of all contacts
-    static findById(contactId) {
+    static findById(contactId: number): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.get(
                 `SELECT * FROM contacts WHERE id = ?`,
                 [contactId],
-                (err, row) => {
+                (err: any, row: any) => {
                     if (err) {
                         reject(
                             new Error(
@@ -61,7 +66,7 @@ module.exports = class Contact {
     }
 
     // Asynchronously saves a new Contact to the database
-    save() {
+    save(): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
                 let insertFields = [];
@@ -84,7 +89,7 @@ module.exports = class Contact {
                         ", "
                     )}) VALUES (${insertQuestions.join(", ")})`,
                     insertValues,
-                    (err) => {
+                    (err: any) => {
                         if (err) {
                             reject(
                                 new Error(
@@ -93,7 +98,7 @@ module.exports = class Contact {
                             );
                         }
                     }
-                ).get(`SELECT last_insert_rowid()`, (err, result) => {
+                ).get(`SELECT last_insert_rowid()`, (err: any, result: any) => {
                     if (err) {
                         reject(new Error(`Error getting id: ${err.message}`));
                     }
@@ -105,12 +110,11 @@ module.exports = class Contact {
     }
 
     // Asynchronously updates a Contact in the database
-    update(args = {}) {
-        if (Object.keys(args).length === 0) {
-            console.debug("No args passed to update. Returning.");
-            return;
-        }
+    update(args: ContactPayload = {}): Promise<Contact> {
         return new Promise((resolve, reject) => {
+            if (Object.keys(args).length === 0) {
+                reject(new Error("No args passed to update. Returning."));
+            }    
             db.serialize(() => {
                 let setStatements = [];
                 let insertValues = [];
@@ -133,7 +137,7 @@ module.exports = class Contact {
                         ", "
                     )} WHERE id = ?;`,
                     insertValues,
-                    (err) => {
+                    (err: any) => {
                         if (err) {
                             reject(
                                 new Error(
@@ -141,38 +145,39 @@ module.exports = class Contact {
                                 )
                             );
                         }
-                        resolve();
+                        resolve(this);
                     }
                 );
             });
         });
     }
 
-    contactFieldToDbField(field, value) {
-        if (field.type == "text" || field.type == "integer") {
+    contactFieldToDbField(field: DbField, value: any): string | null {
+        if (field.type == FieldType.text || field.type == FieldType.integer) {
             return value;
-        } else if (field.type == "tags") {
+        } else if (field.type == FieldType.tags) {
             const stringified = JSON.stringify(value);
             return stringified;
-        } else if (field.type == "date") {
+        } else if (field.type == FieldType.date) {
             if (this[field.name] == null) {
                 return null;
             } else {
                 return value.getTime();
             }
         }
+        throw new Error(`Unknown field type ${field.type}`);
     }
 
-    static dbRowToContact(row) {
-        let args = {};
+    static dbRowToContact(row: any): any {
+        let args: ContactPayload = {};
         for (const field of dbFields) {
             if (row[field.name]) {
-                if (field.type == "text" || field.type == "integer") {
+                if (field.type == FieldType.text || field.type == FieldType.integer) {
                     args[field.name] = row[field.name];
-                } else if (field.type == "tags") {
+                } else if (field.type == FieldType.tags) {
                     const tagList = JSON.parse(row[field.name]);
                     args[field.name] = tagList;
-                } else if (field.type == "date") {
+                } else if (field.type == FieldType.date) {
                     if (row[field.name] == null) {
                         args[field.name] = null;
                     } else {

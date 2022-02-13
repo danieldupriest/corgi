@@ -1,14 +1,15 @@
-const csv = require("async-csv");
-const fs = require("fs");
+import csv from "async-csv";
+import fs from "fs";
+import { Dict } from "./types"
 
-exports.csvToHeadersAndDict = async (filePath) => {
+export const csvToHeadersAndDict = async (filePath: string): Promise<[string[], Dict[]]> => {
     console.debug(`Loading CSV file at ${filePath}`);
     const data = fs.readFileSync(filePath, { encoding: "utf8", flag: "r" });
     const rows = await csv.parse(data);
-    const headers = rows[0];
-    const results = [];
-    rows.forEach((row) => {
-        const result = {};
+    const headers: any = rows[0];
+    const results: Dict[] = [];
+    rows.forEach((row: any) => {
+        const result: Dict = {};
         for (const [index, field] of headers.entries()) {
             result[field] = row[index];
         }

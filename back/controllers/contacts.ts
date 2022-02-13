@@ -1,12 +1,14 @@
-require("dotenv").config();
-const fs = require("fs");
-const Contact = require("../database/contact");
-const Merge = require("../database/merge");
-const { dbFields } = require("../database/fields");
+import { config } from "dotenv";
+config();
+import fs from "fs";
+import Contact from "../database/contact";
+import Merge from "../database/merge";
+import { dbFields } from "../database/fields";
+import { Request, Response, NextFunction } from "express";
 
 const TEMP_PATH = process.env.TEMP_PATH;
 
-exports.getAllContacts = async (req, res, next) => {
+export const getAllContacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const result = await Contact.findAll();
     const data = {
         contacts: result,
@@ -15,12 +17,15 @@ exports.getAllContacts = async (req, res, next) => {
     res.status(200).json(data);
 };
 
-exports.uploadContacts = async (req, res, next) => {
-    const path = req.file.path;
+export const uploadContacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const path = req.file?.path;
+    if (!path) {
+        throw new Error("File not found in request.")
+    }
     const file = path.split("/").slice(-1)[0];
     if (fs.existsSync(path)) {
         console.debug(`Saved temp file: ${file}.`);
-        const merge = new Merge(file, {});
+        const merge = new Merge(file);
         merge
             .save()
             .then((result) => {
