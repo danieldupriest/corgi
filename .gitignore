@@ -2,6 +2,7 @@
 front/dist/
 back/tmp/
 back/database/sqlite.db
+back/build/
 
 # Logs
 logs
