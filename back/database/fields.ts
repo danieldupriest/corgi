@@ -155,7 +155,7 @@ export const dbFields: DbField[] = [
     },
 ];
 
-export const getFieldByName = (fieldName: string) => {
+export const getFieldByName = (fieldName: string): DbField => {
     for (const field of dbFields) {
         if (field.name == fieldName) {
             return field;
@@ -164,7 +164,7 @@ export const getFieldByName = (fieldName: string) => {
     throw new Error(`Field ${fieldName} not found.`);
 };
 
-export const userTextToContactArg = (field: DbField, input: string) => {
+export const userTextToContactArg = (field: DbField, input: string): any => {
     if (field.type == FieldType.text) {
         if (input == "") {
             return input;

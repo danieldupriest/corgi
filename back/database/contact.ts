@@ -21,7 +21,7 @@ export default class Contact {
     }
 
     // Converts a contact to string representation
-    toString() {
+    toString(): string {
         return `Contact ${this.id}: ${this.first_name_or_names} ${this.last_name}`;
     }
 
@@ -152,7 +152,7 @@ export default class Contact {
         });
     }
 
-    contactFieldToDbField(field: DbField, value: any) {
+    contactFieldToDbField(field: DbField, value: any): string | null {
         if (field.type == FieldType.text || field.type == FieldType.integer) {
             return value;
         } else if (field.type == FieldType.tags) {
@@ -165,9 +165,10 @@ export default class Contact {
                 return value.getTime();
             }
         }
+        throw new Error(`Unknown field type ${field.type}`);
     }
 
-    static dbRowToContact(row: any) {
+    static dbRowToContact(row: any): any {
         let args: ContactPayload = {};
         for (const field of dbFields) {
             if (row[field.name]) {

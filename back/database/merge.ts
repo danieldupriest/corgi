@@ -4,17 +4,23 @@ import { Duplicate, MergeConfig } from "../utils/types";
 // Merge object
 export default class Merge {
     id: number;
-    config: MergeConfig | null;
+    config: MergeConfig;
     duplicates: Duplicate[];
     file: string;
 
     // Creates a new merge object
-    constructor(file: string, config = null, duplicates = null, id = 0): void {
+    constructor(file: string, config = null, duplicates = null, id = 0) {
         this.file = file;
         if (config != null) {
             this.config = config;
         } else {
-            this.config = null;
+            this.config = {
+                customFields: {},
+                matchFields: {},
+                matchFieldsArray: [],
+                mergeMethods: {},
+                sourceFields: {},
+            };
         }
         if (duplicates != null) {
             this.duplicates = duplicates;

@@ -3,11 +3,11 @@ config();
 import fs from "fs";
 import { dbFields } from "./fields.js";
 
-const databaseFile = process.env.DATABASE_FILE || "database.db";
+const databaseFile = process.env.DATABASE_FILE || "sqlite.db";
 
 initialize();
 
-function initialize() {
+function initialize(): void {
     if (fs.existsSync(databaseFile)) {
         fs.unlinkSync(databaseFile);
     }
