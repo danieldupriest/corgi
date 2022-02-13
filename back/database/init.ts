@@ -1,8 +1,9 @@
-require("dotenv").config();
-const fs = require("fs");
-const { dbFields } = require("./fields.js");
+import { config } from "dotenv";
+config();
+import fs from "fs";
+import { dbFields } from "./fields.js";
 
-const databaseFile = process.env.DATABASE_FILE;
+const databaseFile = process.env.DATABASE_FILE || "database.db";
 
 initialize();
 
@@ -12,7 +13,7 @@ function initialize() {
     }
 
     const db = require("./database");
-    let initFields = [];
+    let initFields: string[] = [];
     dbFields.forEach((field) => {
         initFields.push(`${field.name} ${field.dbFieldType}`);
     });
@@ -20,7 +21,7 @@ function initialize() {
         db.run(
             `CREATE TABLE IF NOT EXISTS contacts
             (${initFields.join(", ")});`,
-            (err) => {
+            (err: any) => {
                 if (err) {
                     throw new Error(err.msg);
                 }
@@ -31,14 +32,14 @@ function initialize() {
             file TEXT,
             config TEXT,
             duplicates TEXT)`,
-            (err) => {
+            (err: any) => {
                 if (err) {
                     throw new Error(err.msg);
                 }
             }
         );
     });
-    db.close((err) => {
+    db.close((err: any) => {
         if (err) {
             console.error(err.message);
         }
