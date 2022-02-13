@@ -73,7 +73,7 @@ export const doMerge = async (req: Request, res: Response, next: NextFunction): 
     res.status(200).json(data);
 };
 
-async function normalInsertContact(testing: Contact, config: MergeConfig): Promise<void> {
+async function normalInsertContact(testing: Dict, config: MergeConfig): Promise<void> {
     const { customFields, mergeMethods, sourceFields } = config;
     let args: Dict = {};
     for (const field of dbFields) {
@@ -95,7 +95,7 @@ async function normalInsertContact(testing: Contact, config: MergeConfig): Promi
     await dbContact.save();
 }
 
-async function autoMergeContact(testing: Contact, existingContact: Contact, config: MergeConfig): Promise<void> {
+async function autoMergeContact(testing: Dict, existingContact: Contact, config: MergeConfig): Promise<void> {
     const { customFields, mergeMethods, sourceFields } = config;
     let args: ContactPayload = {};
     for (const field of dbFields) {
@@ -136,7 +136,7 @@ async function autoMergeContact(testing: Contact, existingContact: Contact, conf
 }
 
 async function manualMergeContact(
-    testing: Contact,
+    testing: Dict,
     existingContact: Contact,
     config: MergeConfig,
     overwrites: OverwritePlan[],
@@ -209,7 +209,7 @@ async function estimateNumbers(merge: Merge): Promise<[number, number, number]> 
     })
 }
 
-function findMatch(testing: Contact, existingContacts: Contact[], config: MergeConfig): Contact | null {
+function findMatch(testing: Dict, existingContacts: Contact[], config: MergeConfig): Contact | null {
     let matchFields = config.matchFieldsArray;
     let sourceFields = config.sourceFields;
     for (const existing of existingContacts) {
@@ -230,7 +230,7 @@ function findMatch(testing: Contact, existingContacts: Contact[], config: MergeC
     return null;
 }
 
-function automaticMergePossible(testing: Contact, match: Contact, config: MergeConfig): boolean {
+function automaticMergePossible(testing: Dict, match: Contact, config: MergeConfig): boolean {
     const { sourceFields, mergeMethods } = config;
 
     for (const field of dbFields) {
