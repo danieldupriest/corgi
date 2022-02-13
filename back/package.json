@@ -5,8 +5,8 @@
   "main": "serve.js",
   "scripts": {
     "build": "npx tsc --project ./",
-    "init": "node database/init.js",
-    "serve": "nodemon server.js",
+    "init": "node build/database/init.js",
+    "serve": "nodemon build/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

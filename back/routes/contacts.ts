@@ -19,4 +19,4 @@ router.post("/upload/:mergeId/merge", doMerge);
 router.get("/upload/:mergeId/duplicates", getDuplicates);
 router.post("/upload/:mergeId/overwrite/:existingId/with/:newId", overwrite);
 
-module.exports = router;
+export default router;
