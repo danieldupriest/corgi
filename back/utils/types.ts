@@ -6,6 +6,14 @@ export type Dict = {
     [key: string]: string;
 }
 
+export type DbField = {
+    name: string;
+    pretty_name: string;
+    type: FieldType;
+    defaultValue: any;
+    dbFieldType: string;
+    readOnly: boolean;
+}
 
 export type Duplicate = {
     csvRowNumber: number,

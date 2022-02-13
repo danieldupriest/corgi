@@ -1,13 +1,14 @@
-const db = require("./database");
-const { dbFields } = require("./fields");
+import db from "./database";
+import { dbFields } from "./fields";
+import { ContactPayload, DbField, FieldType } from "../utils/types";
 
 // Dataclass to store contact information. args should be an object containing user text fields
 export default class Contact {
     id: number;
-    [key: string]: any;
+    [key: string]: any; // Allow for arbitrary data to be added as property
 
     // Creates a new contact
-    constructor(args: Dict = {}) {
+    constructor(args: ContactPayload = {}) {
         this.id = 0;
         for (const field of dbFields) {
             this[field.name] = field.defaultValue;
@@ -27,7 +28,7 @@ export default class Contact {
     // Asynchronously returns a sorted list of all contacts
     static findAll(): Promise<Contact[]> {
         return new Promise((resolve, reject) => {
-            db.all(`SELECT * FROM contacts`, [], (err, rows) => {
+            db.all(`SELECT * FROM contacts`, [], (err: any, rows: any[]) => {
                 if (err) {
                     reject(
                         new Error(`Error retrieving contacts: ${err.message}`)
@@ -49,7 +50,7 @@ export default class Contact {
             db.get(
                 `SELECT * FROM contacts WHERE id = ?`,
                 [contactId],
-                (err, row) => {
+                (err: any, row: any) => {
                     if (err) {
                         reject(
                             new Error(
@@ -88,7 +89,7 @@ export default class Contact {
                         ", "
                     )}) VALUES (${insertQuestions.join(", ")})`,
                     insertValues,
-                    (err) => {
+                    (err: any) => {
                         if (err) {
                             reject(
                                 new Error(
@@ -97,7 +98,7 @@ export default class Contact {
                             );
                         }
                     }
-                ).get(`SELECT last_insert_rowid()`, (err, result) => {
+                ).get(`SELECT last_insert_rowid()`, (err: any, result: any) => {
                     if (err) {
                         reject(new Error(`Error getting id: ${err.message}`));
                     }
@@ -109,7 +110,7 @@ export default class Contact {
     }
 
     // Asynchronously updates a Contact in the database
-    update(args = {}) {
+    update(args: ContactPayload = {}) {
         if (Object.keys(args).length === 0) {
             console.debug("No args passed to update. Returning.");
             return;
@@ -137,7 +138,7 @@ export default class Contact {
                         ", "
                     )} WHERE id = ?;`,
                     insertValues,
-                    (err) => {
+                    (err: any) => {
                         if (err) {
                             reject(
                                 new Error(
@@ -145,20 +146,20 @@ export default class Contact {
                                 )
                             );
                         }
-                        resolve();
+                        resolve(this);
                     }
                 );
             });
         });
     }
 
-    contactFieldToDbField(field, value) {
-        if (field.type == "text" || field.type == "integer") {
+    contactFieldToDbField(field: DbField, value: any) {
+        if (field.type == FieldType.text || field.type == FieldType.integer) {
             return value;
-        } else if (field.type == "tags") {
+        } else if (field.type == FieldType.tags) {
             const stringified = JSON.stringify(value);
             return stringified;
-        } else if (field.type == "date") {
+        } else if (field.type == FieldType.date) {
             if (this[field.name] == null) {
                 return null;
             } else {
@@ -167,16 +168,16 @@ export default class Contact {
         }
     }
 
-    static dbRowToContact(row) {
-        let args = {};
+    static dbRowToContact(row: any) {
+        let args: ContactPayload = {};
         for (const field of dbFields) {
             if (row[field.name]) {
-                if (field.type == "text" || field.type == "integer") {
+                if (field.type == FieldType.text || field.type == FieldType.integer) {
                     args[field.name] = row[field.name];
-                } else if (field.type == "tags") {
+                } else if (field.type == FieldType.tags) {
                     const tagList = JSON.parse(row[field.name]);
                     args[field.name] = tagList;
-                } else if (field.type == "date") {
+                } else if (field.type == FieldType.date) {
                     if (row[field.name] == null) {
                         args[field.name] = null;
                     } else {

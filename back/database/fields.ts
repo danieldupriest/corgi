@@ -1,6 +1,6 @@
-import { FieldType } from "../utils/types"
+import { DbField, FieldType } from "../utils/types"
 
-export const dbFields = [
+export const dbFields: DbField[] = [
     {
         name: "id",
         pretty_name: "ID",
