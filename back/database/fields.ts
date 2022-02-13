@@ -1,4 +1,4 @@
-const dbFields = [
+export const dbFields = [
     {
         name: "id",
         pretty_name: "ID",
@@ -153,7 +153,7 @@ const dbFields = [
     },
 ];
 
-const getFieldByName = (fieldName) => {
+export const getFieldByName = (fieldName) => {
     for (const field of dbFields) {
         if (field.name == fieldName) {
             return field;
@@ -162,7 +162,7 @@ const getFieldByName = (fieldName) => {
     throw new Error(`Field ${fieldName} not found.`);
 };
 
-const userTextToContactArg = (field, input) => {
+export const userTextToContactArg = (field, input) => {
     if (field.type == "text") {
         if (input == "") {
             return input;
@@ -193,10 +193,4 @@ const userTextToContactArg = (field, input) => {
         }
     }
     throw new Error(`Unsupported field type: ${field.type}`);
-};
-
-module.exports = {
-    dbFields,
-    getFieldByName,
-    userTextToContactArg,
 };

@@ -2,7 +2,7 @@ const db = require("./database");
 const { dbFields } = require("./fields");
 
 // Dataclass to store contact information. args should be an object containing user text fields
-module.exports = class Contact {
+export default class Contact {
     // Creates a new contact
     constructor(args = {}) {
         for (const field of dbFields) {

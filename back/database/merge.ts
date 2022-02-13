@@ -1,7 +1,9 @@
 const db = require("./database");
 
 // Dataclass to store contact information
-module.exports = class Merge {
+export default class Merge {
+    id: number;
+    
     // Creates a new contact
     constructor(file, config = null, duplicates = null, id = 0) {
         this.file = file;

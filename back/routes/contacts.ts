@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import { getAllContacts, uploadContacts } from "../controllers/contacts";
 import {
     configure,
@@ -12,7 +13,7 @@ const router = express.Router();
 
 router.get("/", getAllContacts);
 
-const upload = require("multer")({ dest: process.env.TEMP_PATH }).single("file");
+const upload = multer({ dest: process.env.TEMP_PATH }).single("file");
 router.post("/upload", upload, uploadContacts);
 
 router.get("/upload/:mergeId/headers", getHeaders);
