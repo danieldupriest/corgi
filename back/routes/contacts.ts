@@ -1,18 +1,20 @@
-const express = require("express");
-const router = express.Router();
-const TEMP_PATH = process.env.TEMP_PATH;
-const upload = require("multer")({ dest: TEMP_PATH }).single("file");
-const { getAllContacts, uploadContacts } = require("../controllers/contacts");
-const {
+import express from "express";
+import { getAllContacts, uploadContacts } from "../controllers/contacts";
+import {
     configure,
     getHeaders,
     doMerge,
     getDuplicates,
     overwrite,
-} = require("../controllers/merge");
+} from "../controllers/merge";
+
+const router = express.Router();
 
 router.get("/", getAllContacts);
+
+const upload = require("multer")({ dest: process.env.TEMP_PATH }).single("file");
 router.post("/upload", upload, uploadContacts);
+
 router.get("/upload/:mergeId/headers", getHeaders);
 router.post("/upload/:mergeId/configure", configure);
 router.post("/upload/:mergeId/merge", doMerge);

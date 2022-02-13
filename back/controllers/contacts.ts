@@ -6,7 +6,7 @@ const { dbFields } = require("../database/fields");
 
 const TEMP_PATH = process.env.TEMP_PATH;
 
-exports.getAllContacts = async (req, res, next) => {
+export const getAllContacts = async (rerouteq, res, next) => {
     const result = await Contact.findAll();
     const data = {
         contacts: result,
@@ -15,7 +15,7 @@ exports.getAllContacts = async (req, res, next) => {
     res.status(200).json(data);
 };
 
-exports.uploadContacts = async (req, res, next) => {
+export const uploadContacts = async (req, res, next) => {
     const path = req.file.path;
     const file = path.split("/").slice(-1)[0];
     if (fs.existsSync(path)) {

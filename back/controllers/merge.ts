@@ -11,7 +11,7 @@ const {
 /**
  * Import as many contacts as possible automatically.
  */
-exports.doMerge = async (req, res, next) => {
+export const doMerge = async (req, res, next) => {
     // Load merge config
     const mergeId = req.params.mergeId;
     console.debug(`Merging contacts for merge id ${mergeId}.`);
@@ -27,15 +27,15 @@ exports.doMerge = async (req, res, next) => {
 
     // Try to merge automatically
     let newImportCount = 0;
-    let automaticMergeCount = 0;
-    let manualMergeCount = 0;
+    // let automaticMergeCount = 0;
+    // let manualMergeCount = 0;
     for (let i = 0; i < newContacts.length; i++) {
-        const newContact = newContacts[i];
-        const match = findMatch(newContact, existingContacts, config);
+        // // const testing = newContacts[i];
+        const match = findMatch(testing, existingContacts, config);
         if (match) {
-            if (automaticMergePossible(newContact, match, config)) {
+            if (automaticMergePossible(testing, match, config)) {
                 try {
-                    await autoMergeContact(newContact, match, config);
+                    await autoMergeContact(testing, match, config);
                     automaticMergeCount += 1;
                 } catch (err) {
                     console.error(`Error automerging contact: ${err.message}`);
@@ -46,7 +46,7 @@ exports.doMerge = async (req, res, next) => {
                 manualMergeCount += 1;
             }
         } else {
-            await normalInsertContact(newContact, config);
+            await normalInsertContact(testing, config);
             newImportCount += 1;
         }
     }
@@ -58,7 +58,7 @@ exports.doMerge = async (req, res, next) => {
     res.status(200).json(data);
 };
 
-async function normalInsertContact(newContact, config) {
+async function normalInsertContact(testing, config) {
     const { customFields, mergeMethods, sourceFields } = config;
     let args = {};
     for (const field of dbFields) {
@@ -72,7 +72,7 @@ async function normalInsertContact(newContact, config) {
             const value = customFields[dbFieldName];
             args[dbFieldName] = userTextToContactArg(field, value);
         } else {
-            const value = newContact[source];
+            const value = testing[source];
             args[dbFieldName] = userTextToContactArg(field, value);
         }
     }
@@ -80,7 +80,7 @@ async function normalInsertContact(newContact, config) {
     await dbContact.save();
 }
 
-async function autoMergeContact(newContact, existingContact, config) {
+async function autoMergeContact(testing, existingContact, config) {
     const { customFields, mergeMethods, sourceFields } = config;
     let args = {};
     for (const field of dbFields) {
@@ -90,7 +90,7 @@ async function autoMergeContact(newContact, existingContact, config) {
             continue;
         }
         const existingValue = existingContact[dbFieldName];
-        const userValue = newContact[userFieldName];
+        const userValue = testing[userFieldName];
         const newValue = userTextToContactArg(field, userValue);
         const method = mergeMethods[dbFieldName];
         const customValue = userTextToContactArg(
@@ -121,13 +121,13 @@ async function autoMergeContact(newContact, existingContact, config) {
 }
 
 async function manualMergeContact(
-    newContact,
+    testing,
     existingContact,
     config,
     overwrites
 ) {
     // Automatically merge what is possible
-    await autoMergeContact(newContact, existingContact, config);
+    await autoMergeContact(testing, existingContact, config);
 
     // Prepare args for update of manual fields
     let args = {};
@@ -141,7 +141,7 @@ async function manualMergeContact(
         if (userFieldName == "none") {
             continue;
         }
-        const userValue = newContact[userFieldName];
+        const userValue = testing[userFieldName];
         const field = getFieldByName(dbFieldName);
         const newValue = userTextToContactArg(field, userValue);
         args[dbFieldName] = newValue;
@@ -154,7 +154,7 @@ async function manualMergeContact(
  * Updates a merge configuration and provides estimated
  * number of new imports, automatic merges, and manual merges.
  */
-exports.configure = async (req, res, next) => {
+export const configure = async (req, res, next) => {
     const mergeId = req.params.mergeId;
     console.debug(`Configuring merge ${mergeId}.`);
     const merge = await Merge.findById(mergeId);
@@ -177,10 +177,10 @@ async function estimateNumbers(merge) {
     let numberOfNewImports = 0;
     let numberOfAutoMerges = 0;
     let numberOfManualMerges = 0;
-    for (const newContact of newContacts) {
-        const match = findMatch(newContact, existingContacts, merge.config);
+    for (const testing of newContacts) {
+        const match = findMatch(testing, existingContacts, merge.config);
         if (match) {
-            if (automaticMergePossible(newContact, match, merge.config)) {
+            if (automaticMergePossible(testing, match, merge.config)) {
                 numberOfAutoMerges += 1;
             } else {
                 numberOfManualMerges += 1;
@@ -192,7 +192,7 @@ async function estimateNumbers(merge) {
     return [numberOfNewImports, numberOfAutoMerges, numberOfManualMerges];
 }
 
-function findMatch(newContact, existingContacts, config) {
+function findMatch(testing, existingContacts, config) {
     let matchFields = config.matchFieldsArray;
     let sourceFields = config.sourceFields;
     for (const existing of existingContacts) {
@@ -200,7 +200,7 @@ function findMatch(newContact, existingContacts, config) {
         for (const fieldName of matchFields) {
             const newFieldName = sourceFields[fieldName];
             const existingValue = existing[fieldName].toLowerCase();
-            const newValue = newContact[newFieldName].toLowerCase();
+            const newValue = testing[newFieldName].toLowerCase();
 
             if (existingValue == newValue) {
                 matchCount += 1;
@@ -213,7 +213,7 @@ function findMatch(newContact, existingContacts, config) {
     return null;
 }
 
-function automaticMergePossible(newContact, match, config) {
+function automaticMergePossible(testing, match, config) {
     const { sourceFields, mergeMethods } = config;
 
     for (const field of dbFields) {
@@ -223,7 +223,7 @@ function automaticMergePossible(newContact, match, config) {
         if (userFieldName == "none") {
             continue;
         }
-        const newValue = newContact[userFieldName];
+        const newValue = testing[userFieldName];
         const existingValue = match[dbFieldName];
 
         if (mergeMethods[dbFieldName] == "auto") {
@@ -265,7 +265,7 @@ function fieldsMatch(newValue, existingValue, dbFieldType) {
     return false;
 }
 
-exports.getDuplicates = async (req, res, next) => {
+export const getDuplicates = async (req, res, next) => {
     // Load merge data and config
     const mergeId = req.params.mergeId;
     const merge = await Merge.findById(mergeId);
@@ -286,13 +286,13 @@ exports.getDuplicates = async (req, res, next) => {
             fields: [],
         };
         const existingContact = await Contact.findById(existingContactId);
-        const newContact = newContacts[csvRowNumber];
+        const testing = newContacts[csvRowNumber];
         for (const field of dbFields) {
             const newValueSourceField = sourceFields[field.name];
             if (field.readOnly || newValueSourceField == "none") {
                 continue;
             }
-            const newValue = newContact[newValueSourceField];
+            const newValue = testing[newValueSourceField];
             const existingValue = existingContact[field.name];
             const mergeMethod = mergeMethods[field.name];
             let dupField = {
@@ -321,7 +321,7 @@ exports.getDuplicates = async (req, res, next) => {
     res.status(200).json(data);
 };
 
-exports.overwrite = async (req, res, next) => {
+export const overwrite = async (req, res, next) => {
     // Load merge data and config
     const { overwrites } = req.body;
     console.log(overwrites);
@@ -332,13 +332,13 @@ exports.overwrite = async (req, res, next) => {
     // Load csv contact
     const path = process.env.TEMP_PATH + file;
     const [_, newContacts] = await csvToHeadersAndDict(path);
-    const newContact = newContacts[newId];
+    const testing = newContacts[newId];
 
     // Load db contact
     const existingContact = await Contact.findById(existingId);
 
     // Merge
-    await manualMergeContact(newContact, existingContact, config, overwrites);
+    await manualMergeContact(testing, existingContact, config, overwrites);
 
     // Remove duplicate from merge object
     await merge.removeDuplicate(newId);
@@ -346,7 +346,7 @@ exports.overwrite = async (req, res, next) => {
     return res.status(200).end();
 };
 
-exports.getHeaders = async (req, res, next) => {
+export const getHeaders = async (req, res, next) => {
     const mergeId = req.params.mergeId;
     const merge = await Merge.findById(mergeId);
     const path = process.env.TEMP_PATH + merge.file;
