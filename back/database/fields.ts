@@ -155,7 +155,7 @@ export const dbFields: DbField[] = [
     },
 ];
 
-export const getFieldByName = (fieldName) => {
+export const getFieldByName = (fieldName: string) => {
     for (const field of dbFields) {
         if (field.name == fieldName) {
             return field;
@@ -164,8 +164,8 @@ export const getFieldByName = (fieldName) => {
     throw new Error(`Field ${fieldName} not found.`);
 };
 
-export const userTextToContactArg = (field, input) => {
-    if (field.type == "text") {
+export const userTextToContactArg = (field: DbField, input: string) => {
+    if (field.type == FieldType.text) {
         if (input == "") {
             return input;
         }
@@ -174,19 +174,20 @@ export const userTextToContactArg = (field, input) => {
             for (let i = 0; i < words.length; i++) {
                 words[i] =
                     words[i][0].toUpperCase() +
-                    words[i].substr(1).toLowerCase();
+                    words[i].substring(1).toLowerCase();
             }
         } catch (err) {
-            console.error(`Error processing '${input}'`);
-            console.error(err.message);
+            console.error(`Error processing '${input}'`)
+            if (err instanceof Error)
+                console.error(err.message);
         }
         return words.join(" ");
-    } else if (field.type == "integer") {
+    } else if (field.type == FieldType.integer) {
         return input;
-    } else if (field.type == "tags") {
+    } else if (field.type == FieldType.tags) {
         const tags = input.split(/[,|, ]+/);
         return tags;
-    } else if (field.type == "date") {
+    } else if (field.type == FieldType.date) {
         if (input == null || input == "") {
             return null;
         } else {
