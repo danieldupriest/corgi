@@ -3,8 +3,12 @@ const { dbFields } = require("./fields");
 
 // Dataclass to store contact information. args should be an object containing user text fields
 export default class Contact {
+    id: number;
+    [key: string]: any;
+
     // Creates a new contact
-    constructor(args = {}) {
+    constructor(args: Dict = {}) {
+        this.id = 0;
         for (const field of dbFields) {
             this[field.name] = field.defaultValue;
             if (args[field.name]) {
@@ -21,7 +25,7 @@ export default class Contact {
     }
 
     // Asynchronously returns a sorted list of all contacts
-    static findAll() {
+    static findAll(): Promise<Contact[]> {
         return new Promise((resolve, reject) => {
             db.all(`SELECT * FROM contacts`, [], (err, rows) => {
                 if (err) {
@@ -40,7 +44,7 @@ export default class Contact {
     }
 
     // Asynchronously returns a sorted list of all contacts
-    static findById(contactId) {
+    static findById(contactId: number): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.get(
                 `SELECT * FROM contacts WHERE id = ?`,

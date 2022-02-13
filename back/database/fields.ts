@@ -1,8 +1,10 @@
+import { FieldType } from "../utils/types"
+
 export const dbFields = [
     {
         name: "id",
         pretty_name: "ID",
-        type: "integer",
+        type: FieldType.integer,
         defaultValue: 0,
         dbFieldType: "INTEGER PRIMARY KEY AUTOINCREMENT",
         readOnly: true,
@@ -10,7 +12,7 @@ export const dbFields = [
     {
         name: "first_name_or_names",
         pretty_name: "First name(s)",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -18,7 +20,7 @@ export const dbFields = [
     {
         name: "last_name",
         pretty_name: "Last name",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -26,7 +28,7 @@ export const dbFields = [
     {
         name: "date_of_birth",
         pretty_name: "DOB",
-        type: "date",
+        type: FieldType.date,
         defaultValue: null,
         dbFieldType: "INTEGER",
         readOnly: false,
@@ -34,7 +36,7 @@ export const dbFields = [
     {
         name: "address_number",
         pretty_name: "House no.",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -42,7 +44,7 @@ export const dbFields = [
     {
         name: "address_street",
         pretty_name: "Street address",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -50,7 +52,7 @@ export const dbFields = [
     {
         name: "city",
         pretty_name: "City",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -58,7 +60,7 @@ export const dbFields = [
     {
         name: "state",
         pretty_name: "State",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -66,7 +68,7 @@ export const dbFields = [
     {
         name: "zip_code",
         pretty_name: "Zip",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -74,7 +76,7 @@ export const dbFields = [
     {
         name: "precinct",
         pretty_name: "Precinct",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -82,7 +84,7 @@ export const dbFields = [
     {
         name: "subdivision",
         pretty_name: "Subdivision",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -90,7 +92,7 @@ export const dbFields = [
     {
         name: "email",
         pretty_name: "E-mail",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -98,7 +100,7 @@ export const dbFields = [
     {
         name: "phone",
         pretty_name: "Phone",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -106,7 +108,7 @@ export const dbFields = [
     {
         name: "job",
         pretty_name: "Job",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -114,7 +116,7 @@ export const dbFields = [
     {
         name: "notes",
         pretty_name: "Notes",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,
@@ -122,7 +124,7 @@ export const dbFields = [
     {
         name: "tags",
         pretty_name: "Tags",
-        type: "tags",
+        type: FieldType.tags,
         defaultValue: [],
         dbFieldType: "TEXT",
         readOnly: false,
@@ -130,7 +132,7 @@ export const dbFields = [
     {
         name: "votes",
         pretty_name: "Votes",
-        type: "tags",
+        type: FieldType.tags,
         defaultValue: [],
         dbFieldType: "TEXT",
         readOnly: false,
@@ -138,7 +140,7 @@ export const dbFields = [
     {
         name: "donations",
         pretty_name: "Donations",
-        type: "integer",
+        type: FieldType.integer,
         defaultValue: 0,
         dbFieldType: "INTEGER",
         readOnly: false,
@@ -146,7 +148,7 @@ export const dbFields = [
     {
         name: "voter_id",
         pretty_name: "Voter ID",
-        type: "text",
+        type: FieldType.text,
         defaultValue: "",
         dbFieldType: "TEXT",
         readOnly: false,

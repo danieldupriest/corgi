@@ -1,10 +1,14 @@
-const db = require("./database");
+import db from "./database";
+import { Duplicate, MergeConfig } from "../utils/types"
 
-// Dataclass to store contact information
+// Merge object
 export default class Merge {
     id: number;
-    
-    // Creates a new contact
+    config: MergeConfig;
+    duplicates: Duplicate[];
+    file: string;
+
+    // Creates a new merge object
     constructor(file, config = null, duplicates = null, id = 0) {
         this.file = file;
         if (config != null) {
@@ -40,7 +44,7 @@ export default class Merge {
     }
 
     // Asynchronously returns a list of all merges
-    static findAll() {
+    static findAll(): Promise<Merge[]> {
         return new Promise((resolve, reject) => {
             db.all(`SELECT * FROM merges`, [], (err, rows) => {
                 if (err) {
@@ -62,7 +66,7 @@ export default class Merge {
         });
     }
 
-    static findById(mergeId) {
+    static findById(mergeId): Promise<Merge> {
         return new Promise((resolve, reject) => {
             db.get(
                 `SELECT * FROM merges WHERE id = ?`,
@@ -142,7 +146,7 @@ export default class Merge {
     }
 
     // Asynchronously adds a duplicate pair (requiring manual merging) to a merge job.
-    addDuplicate(csvRowNumber, existingContactId) {
+    addDuplicate(csvRowNumber: number, existingContactId: number) {
         for (const duplicate of this.duplicates) {
             if (duplicate.csvRowNumber == csvRowNumber) {
                 console.debug(
@@ -158,7 +162,7 @@ export default class Merge {
             db.run(
                 `UPDATE merges SET duplicates = ? WHERE id = ?`,
                 [JSON.stringify(this.duplicates), this.id],
-                (err) => {
+                (err: any) => {
                     if (err) {
                         console.error("Error " + err);
                         reject(

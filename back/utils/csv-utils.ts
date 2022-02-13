@@ -1,7 +1,7 @@
 const csv = require("async-csv");
 const fs = require("fs");
 
-exports.csvToHeadersAndDict = async (filePath) => {
+export const csvToHeadersAndDict = async (filePath) => {
     console.debug(`Loading CSV file at ${filePath}`);
     const data = fs.readFileSync(filePath, { encoding: "utf8", flag: "r" });
     const rows = await csv.parse(data);
