@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/danieldupriest/corgi#readme",
   "devDependencies": {
+    "@types/async-csv": "^2.1.1",
     "@types/express": "^4.17.13",
     "@types/multer": "^1.4.7",
     "@types/node": "^17.0.17",
