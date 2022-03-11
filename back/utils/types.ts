@@ -6,10 +6,23 @@ export type Dict = {
     [key: string]: string;
 }
 
+export type FieldType = {
+    fromUser: Function,
+    toDb: Function,
+    fromDb: Function,
+    dbFieldType: string,
+    defaultValue: any,
+    readOnly: boolean,
+}
+
+export type FieldDict = {
+    [key: string]: FieldType;
+}
+
 export type DbField = {
     name: string;
     pretty_name: string;
-    type: Object;
+    type: FieldType;
 }
 
 export type Duplicate = {
