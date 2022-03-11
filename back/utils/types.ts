@@ -9,10 +9,7 @@ export type Dict = {
 export type DbField = {
     name: string;
     pretty_name: string;
-    type: FieldType;
-    defaultValue: any;
-    dbFieldType: string;
-    readOnly: boolean;
+    type: Object;
 }
 
 export type Duplicate = {
@@ -33,13 +30,6 @@ export type DuplicateForUser = {
     existingId: number;
     newId: number;
     fields: DuplicateField[];
-}
-
-export enum FieldType {
-    "text",
-    "integer",
-    "date",
-    "tags",
 }
 
 export type MergeConfig = {
