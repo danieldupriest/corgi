@@ -1,6 +1,6 @@
 import db from "./database";
 import { dbFields } from "./fields";
-import { ContactPayload, DbField, FieldType } from "../utils/types";
+import { ContactPayload } from "../utils/types";
 
 // Dataclass to store contact information. args should be an object containing user text fields
 export default class Contact {

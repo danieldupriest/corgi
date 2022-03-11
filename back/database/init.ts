@@ -15,7 +15,7 @@ function initialize(): void {
     const db = require("./database");
     let initFields: string[] = [];
     dbFields.forEach((field) => {
-        initFields.push(`${field.name} ${field.dbFieldType}`);
+        initFields.push(`${field.name} ${field.type.dbFieldType}`);
     });
     db.serialize(() => {
         db.run(
