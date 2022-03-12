@@ -16,7 +16,7 @@ import { csvToHeadersAndDict } from "../utils/csv-utils";
 import {
     dbFields,
     getFieldByName,
-    userTextToContactArg,
+    fieldPrototypes,
 } from "../database/fields";
 import { Request, Response, NextFunction } from "express";
 
@@ -85,10 +85,10 @@ async function normalInsertContact(testing: Dict, config: MergeConfig): Promise<
         }
         if (method == "custom") {
             const value = customFields[dbFieldName];
-            args[dbFieldName] = userTextToContactArg(field, value);
+            args[dbFieldName] = field.type.fromUser(value);
         } else {
             const value = testing[source];
-            args[dbFieldName] = userTextToContactArg(field, value);
+            args[dbFieldName] = field.type.fromUser(value);
         }
     }
     const dbContact = new Contact(args);
@@ -106,21 +106,18 @@ async function autoMergeContact(testing: Dict, existingContact: Contact, config:
         }
         const existingValue = existingContact[dbFieldName];
         const userValue = testing[userFieldName];
-        const newValue = userTextToContactArg(field, userValue);
+        const newValue = field.type.fromUser(userValue);
         const method = mergeMethods[dbFieldName];
-        const customValue = userTextToContactArg(
-            field,
-            customFields[dbFieldName]
-        );
+        const customValue = field.type.fromUser(customFields[dbFieldName]);
         if (method == "auto") {
-            if (existingValue == field.defaultValue) {
+            if (existingValue == field.type.defaultValue) {
                 args[dbFieldName] = newValue;
             }
         } else if (method == "use-existing") {
         } else if (method == "use-new") {
             args[dbFieldName] = newValue;
         } else if (method == "custom") {
-            if (field.type == FieldType.tags) {
+            if (field.type === fieldPrototypes.tags) {
                 const tagsToAdd = customValue;
                 let currentTagSet = new Set(existingContact[dbFieldName]);
                 tagsToAdd.forEach((tag: String) => {
@@ -158,7 +155,7 @@ async function manualMergeContact(
         }
         const userValue = testing[userFieldName];
         const field = getFieldByName(dbFieldName);
-        const newValue = userTextToContactArg(field, userValue);
+        const newValue = field.type.fromUser(userValue);
         args[dbFieldName] = newValue;
     }
     console.log(args);
@@ -244,42 +241,13 @@ function automaticMergePossible(testing: Dict, match: Contact, config: MergeConf
         const existingValue = match[dbFieldName];
 
         if (mergeMethods[dbFieldName] == "auto") {
-            if (fieldsMatch(newValue, existingValue, dbFieldType)) {
+            if (field.type.matches(field.type.fromUser(newValue), existingValue)) {
                 continue;
             }
             return false;
         }
     }
     return true;
-}
-
-/**
- * Compares a csv input field value to the value from an existing contact.
- * Returns true if values match.
- */
-function fieldsMatch(newValue: any, existingValue: any, dbFieldType: FieldType): boolean {
-    if (dbFieldType == FieldType.text) {
-        if (
-            newValue == "" ||
-            existingValue == "" ||
-            newValue.toLowerCase() == existingValue.toLowerCase()
-        ) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.integer) {
-        if (newValue == existingValue) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.date) {
-        if (new Date(newValue).getTime() == existingValue.getTime()) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.tags) {
-        if (new Set(newValue.split(/[,|, ]/)) == new Set(existingValue)) {
-            return true;
-        }
-    }
-    return false;
 }
 
 export const getDuplicates = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -306,7 +274,7 @@ export const getDuplicates = async (req: Request, res: Response, next: NextFunct
         const testing = newContacts[csvRowNumber];
         for (const field of dbFields) {
             const newValueSourceField = sourceFields[field.name];
-            if (field.readOnly || newValueSourceField == "none") {
+            if (field.type.readOnly || newValueSourceField == "none") {
                 continue;
             }
             const newValue = testing[newValueSourceField];
@@ -317,14 +285,14 @@ export const getDuplicates = async (req: Request, res: Response, next: NextFunct
                 pretty_name: field.pretty_name,
                 type: field.type,
                 different: false,
-                newData: userTextToContactArg(field, newValue),
+                newData: field.type.fromUser(newValue),
                 existingData: existingValue,
             };
             if (matchFieldsArray.includes(field.name)) {
                 duplicateForUser.fields.push(dupField);
             } else if (
                 mergeMethod == "auto" &&
-                !fieldsMatch(newValue, existingValue, field.type)
+                !field.type.matches(field.type.fromUser(newValue), existingValue)
             ) {
                 dupField.different = true;
                 duplicateForUser.fields.push(dupField);

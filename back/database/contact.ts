@@ -35,6 +35,7 @@ export default class Contact {
                     );
                 }
                 let results = [];
+                console.log(rows);
                 for (const row of rows) {
                     let args: ContactPayload = {};
                     for (const field of dbFields) {

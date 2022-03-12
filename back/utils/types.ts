@@ -11,6 +11,7 @@ export type FieldType = {
     toDb: Function,
     fromDb: Function,
     dbFieldType: string,
+    matches: Function,
     defaultValue: any,
     readOnly: boolean,
 }

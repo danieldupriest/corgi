@@ -17,6 +17,7 @@ function initialize(): void {
     dbFields.forEach((field) => {
         initFields.push(`${field.name} ${field.type.dbFieldType}`);
     });
+    console.log(typeof db);
     db.serialize(() => {
         db.run(
             `CREATE TABLE IF NOT EXISTS contacts

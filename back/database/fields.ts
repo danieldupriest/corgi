@@ -1,6 +1,7 @@
-import { DbField } from "../utils/types"
+import { DbField, FieldType, FieldDict } from "../utils/types"
 
-export const fieldPrototypes = {
+
+export const fieldPrototypes: FieldDict = {
     key: {
         fromUser(input: string) {
             return input;
@@ -10,6 +11,9 @@ export const fieldPrototypes = {
         },
         fromDb(input: number) {
             return input;
+        },
+        matches(a: number, b: number) {
+            return a == b;
         },
         dbFieldType: "INTEGER PRIMARY KEY AUTOINCREMENT",
         defaultValue: 0,
@@ -34,6 +38,9 @@ export const fieldPrototypes = {
         fromDb(input: string) {
             return input;
         },
+        matches(a: string, b: string) {
+            return a == "" || b == "" || a.toLowerCase() == b.toLowerCase()
+        },
         dbFieldType: "TEXT",
         defaultValue: "",
         readOnly: false,
@@ -47,6 +54,9 @@ export const fieldPrototypes = {
         },
         fromDb(input: number) {
             return input;
+        },
+        matches(a: number, b: number) {
+            return a == b;
         },
         dbFieldType: "INTEGER",
         defaultValue: 0,
@@ -62,6 +72,9 @@ export const fieldPrototypes = {
         },
         fromDb(input: string) {
             return JSON.parse(input);
+        },
+        matches(a: Set<string>, b: Set<string>) {
+            return new Set(a) == new Set(b);
         },
         dbFieldType: "TEXT",
         defaultValue: [],
@@ -82,6 +95,9 @@ export const fieldPrototypes = {
             if (input == null)
                 return null;
             return new Date(input);
+        },
+        matches(a: Date, b: Date) {
+            return a.getTime() == b.getTime();
         },
         dbFieldType: "INTEGER",
         defaultValue: null,
