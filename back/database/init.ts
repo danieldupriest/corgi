@@ -2,26 +2,30 @@ import { config } from "dotenv";
 config();
 import fs from "fs";
 import { dbFields } from "./fields.js";
+import db from "./database";
+import Logger from "../utils/Logger"
 
 const databaseFile = process.env.DATABASE_FILE || "sqlite.db";
 
+const log = new Logger();
 initialize();
 
 function initialize(): void {
-    if (fs.existsSync(databaseFile)) {
-        fs.unlinkSync(databaseFile);
-    }
+    //if (fs.existsSync(databaseFile)) {
+    //    fs.unlinkSync(databaseFile);
+    //}
 
-    const db = require("./database");
     let initFields: string[] = [];
     dbFields.forEach((field) => {
         initFields.push(`${field.name} ${field.type.dbFieldType}`);
     });
-    console.log(typeof db);
+    let joined = initFields.join(", ");
+    let createContactsTableSQL = `CREATE TABLE IF NOT EXISTS contacts (${joined});`;
+    log.debug(`Running SQL statement: '${createContactsTableSQL}'`);
+    log.debug(`${JSON.stringify(db)}`);
     db.serialize(() => {
         db.run(
-            `CREATE TABLE IF NOT EXISTS contacts
-            (${initFields.join(", ")});`,
+            createContactsTableSQL,
             (err: any) => {
                 if (err) {
                     throw new Error(err.msg);

@@ -1,5 +1,7 @@
 import { DbField, FieldType, FieldDict } from "../utils/types"
+import Logger from "../utils/Logger"
 
+const log = new Logger();
 
 export const fieldPrototypes: FieldDict = {
     key: {
@@ -39,6 +41,7 @@ export const fieldPrototypes: FieldDict = {
             return input;
         },
         matches(a: string, b: string) {
+            log.debug(`Checking for match between ${a} of type ${typeof a} and ${b} of type ${typeof b}.`);
             return a == "" || b == "" || a.toLowerCase() == b.toLowerCase()
         },
         dbFieldType: "TEXT",
@@ -89,6 +92,8 @@ export const fieldPrototypes: FieldDict = {
             return d;
         },
         toDb(input: Date) {
+            if (input == null)
+                return null;
             return input.getTime();
         },
         fromDb(input: number) {
