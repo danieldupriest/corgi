@@ -5,6 +5,9 @@ sqlite3.verbose()
 
 const dbFile = process.env.DATABASE_FILE || "sqlite.db"
 
+/**
+ * Database object
+ */
 export default new sqlite3.Database(dbFile, (err) => {
     if (err) {
         if (err instanceof Error)

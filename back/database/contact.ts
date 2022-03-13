@@ -2,12 +2,18 @@ import db from "./database";
 import { dbFields } from "./fields";
 import { ContactPayload } from "../utils/types";
 
-// Dataclass to store contact information. args should be an object containing user text fields
+/**
+ * Dataclass to store contact information. args are a dict of database fields, which will be
+ * added as properties programmatically. Fields are specified in the /database/fields.ts file.
+ */
 export default class Contact {
     id: number;
     [key: string]: any; // Allow for arbitrary data to be added as property
 
-    // Creates a new contact
+    /**
+     * Creates a new contact object.
+     * @param args (ContactPayload) - Dict of database fields to add to the contact.
+     */
     constructor(args: ContactPayload = {}) {
         this.id = 0;
         for (const field of dbFields) {
@@ -20,12 +26,18 @@ export default class Contact {
         }
     }
 
-    // Converts a contact to string representation
+    /**
+     * Converts a contact into a string representation.
+     * @returns (string)
+     */
     toString(): string {
         return `Contact ${this.id}: ${this.first_name_or_names} ${this.last_name}`;
     }
 
-    // Asynchronously returns a sorted list of all contacts
+    /**
+     * Asynchronously returns a sorted list of all contacts
+     * @returns (Promise<Contact[]>) - Promise containing an array of all contacts.
+     */
     static findAll(): Promise<Contact[]> {
         return new Promise((resolve, reject) => {
             db.all(`SELECT * FROM contacts`, [], (err: any, rows: any[]) => {
@@ -50,7 +62,11 @@ export default class Contact {
         });
     }
 
-    // Asynchronously returns a sorted list of all contacts
+    /**
+     * Asynchronously returns the specified contact
+     * @param contactId (number) - ID of the contact to return.
+     * @returns (Promise<Contact>) - Promise containing the specified contact.
+     */
     static findById(contactId: number): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.get(
@@ -76,7 +92,10 @@ export default class Contact {
         });
     }
 
-    // Asynchronously saves a new Contact to the database
+    /**
+     * Asynchronously saves a new contact to the database.
+     * @returns (Promise<Contact>) - Promise containing the new contact.
+     */
     save(): Promise<Contact> {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
@@ -117,7 +136,11 @@ export default class Contact {
         });
     }
 
-    // Asynchronously updates a Contact in the database
+    /**
+     * Asynchronously updates a Contact in the database.
+     * @param args (ContactPayload) - Dict containing the fields to update.
+     * @returns (Promise<Contact>) - Promise containing the updated contact.
+     */
     update(args: ContactPayload = {}): Promise<Contact> {
         return new Promise((resolve, reject) => {
             if (Object.keys(args).length === 0) {
