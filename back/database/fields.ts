@@ -6,7 +6,7 @@ const log = new Logger();
 export const fieldPrototypes: FieldDict = {
     key: {
         fromUser(input: string) {
-            return input;
+            return parseInt(input);
         },
         toDb(input: number) {
             return input;
@@ -32,7 +32,7 @@ export const fieldPrototypes: FieldDict = {
                     words[i][0].toUpperCase() +
                     words[i].substring(1).toLowerCase();
             }
-            return words;
+            return words.join(" ");
         },
         toDb(input: string) {
             return input;
@@ -68,6 +68,7 @@ export const fieldPrototypes: FieldDict = {
     tags: {
         fromUser(input: string) {
             const tags = input.split(/[,|, ]+/);
+            tags.sort();
             return tags;
         },
         toDb(input: string[]) {
@@ -76,8 +77,13 @@ export const fieldPrototypes: FieldDict = {
         fromDb(input: string) {
             return JSON.parse(input);
         },
-        matches(a: Set<string>, b: Set<string>) {
-            return new Set(a) == new Set(b);
+        matches(a: string[], b: string[]) {
+            log.debug(`"Testing tag match between ${a} of type ${typeof a} and ${b} of type ${typeof b}.`);
+            const x = new Set(a);
+            const y = new Set(b);
+            if (x.size !== y.size) return false;
+            for (var xItem of x) if (!y.has(xItem)) return false;
+            return true;
         },
         dbFieldType: "TEXT",
         defaultValue: [],
@@ -88,8 +94,16 @@ export const fieldPrototypes: FieldDict = {
             if (input == null || input == "") {
                 return null;
             }
-            const d = new Date(input);
-            return d;
+            const date = new Date(input)
+            const utcDate = new Date(
+                Date.UTC(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate()
+                )
+            );
+            log.debug(`Parsed new user date ${input} as ${utcDate}.`);
+            return utcDate;
         },
         toDb(input: Date) {
             if (input == null)
