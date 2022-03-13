@@ -8,6 +8,12 @@ import { Request, Response, NextFunction } from "express";
 
 const TEMP_PATH = process.env.TEMP_PATH;
 
+/**
+ * API endpoint to deliver a JSON array containing all contact data.
+ * @param req (Request)
+ * @param res (Response)
+ * @param next (NextError)
+ */
 export const getAllContacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const result = await Contact.findAll();
     const data = {
@@ -17,6 +23,13 @@ export const getAllContacts = async (req: Request, res: Response, next: NextFunc
     res.status(200).json(data);
 };
 
+/**
+ * API endpoint for uploading a CSV file containing contact data for import. This
+ * will trigger the creation of a new merge operation.
+ * @param req (Request)
+ * @param res (Response)
+ * @param next (NextError)
+ */
 export const uploadContacts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const path = req.file?.path;
     if (!path) {
