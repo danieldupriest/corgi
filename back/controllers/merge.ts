@@ -287,31 +287,6 @@ function automaticMergePossible(testing: Dict, match: Contact, config: MergeConf
     return true;
 }
 
-function fieldsMatch(newValue: any, existingValue: any, dbFieldType: FieldType): boolean {
-    if (dbFieldType == FieldType.text) {
-        if (
-            newValue == "" ||
-            existingValue == "" ||
-            newValue.toLowerCase() == existingValue.toLowerCase()
-        ) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.integer) {
-        if (newValue == existingValue) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.date) {
-        if (new Date(newValue).getTime() == existingValue.getTime()) {
-            return true;
-        }
-    } else if (dbFieldType == FieldType.tags) {
-        if (new Set(newValue.split(/[,|, ]/)) == new Set(existingValue)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 /**
  * This is the second step in the import process: Viewing duplicate contacts which require
  * manual intervention to merge. It will assemble an array of the conflicting fields for each
@@ -443,7 +418,7 @@ export const overwrite = async (req: Request, res: Response, next: NextFunction)
         }
         const userValue = testing[userFieldName];
         const field = getFieldByName(dbFieldName);
-        const newValue = userTextToContactArg(field, userValue);
+        const newValue = field.type.fromUser(userValue);
         args[dbFieldName] = newValue;
     }
     console.log(args);
