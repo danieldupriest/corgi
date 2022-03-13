@@ -1,14 +1,25 @@
 import db from "./database";
 import { Duplicate, MergeConfig } from "../utils/types";
 
-// Merge object
+/**
+ * The Merge class is a logical operation which introduces new contact data
+ * into the database, along with a configuration to specify how conflicting
+ * data should be handled.
+ */
 export default class Merge {
     id: number;
     config: MergeConfig;
     duplicates: Duplicate[];
     file: string;
 
-    // Creates a new merge object
+    /**
+     * Creates a new Merge operations.
+     * @param file (string) - Name of the CSV file containing the new data to merge.
+     * @param config (MergeConfig) - User settings for how contact data should be merged.
+     * @param duplicates (Duplicate[]) - Array of CSV-row/contact-id pairs thought to
+     * be duplicates of eachother.
+     * @param id (number) - ID of merge operation.
+     */
     constructor(file: string, config = null, duplicates = null, id = 0) {
         this.file = file;
         if (config != null) {
@@ -30,12 +41,18 @@ export default class Merge {
         this.id = id;
     }
 
-    // Converts a merge config to string representation
+    /**
+     * Converts a merge config to string representation.
+     * @returns (string) - String representation of merge operation.
+     */
     toString(): string {
         return `Merge ${this.id}`;
     }
 
-    // Deletes all merges from database
+    /**
+     * Deletes all merges from database.
+     * @returns (Promise<void>) Empty promise.
+     */
     static deleteAll(): Promise<void> {
         return new Promise((resolve, reject) => {
             db.run(`DELETE FROM merges;`, [], (err: any, rows: any[]) => {
@@ -49,7 +66,10 @@ export default class Merge {
         });
     }
 
-    // Asynchronously returns a list of all merges
+    /**
+     * Asynchronously returns a list of all merge operations.
+     * @returns (Promise<Merge[]>) Promise containing list of all merge operations.
+     */
     static findAll(): Promise<Merge[]> {
         return new Promise((resolve, reject) => {
             db.all(`SELECT * FROM merges`, [], (err, rows) => {
@@ -72,6 +92,11 @@ export default class Merge {
         });
     }
 
+    /**
+     * Asynchronously returns list of specified merge operation.
+     * @param mergeId (number) - ID of the merge operation to return.
+     * @returns (Promise<Merge>) - Promise containing the specified merge.
+     */
     static findById(mergeId: number): Promise<Merge> {
         return new Promise((resolve, reject) => {
             db.get(
@@ -97,7 +122,10 @@ export default class Merge {
         });
     }
 
-    // Asynchronously saves a new Merge to the database
+    /**
+     * Asynchronously saves a new Merge to the database.
+     * @returns (Promise<Merge>) - Promise containing the newly saved merge.
+     */
     save(): Promise<Merge> {
         return new Promise((resolve, reject) => {
             db.serialize(() => {
@@ -128,7 +156,11 @@ export default class Merge {
         });
     }
 
-    // Asynchronously updates a Merge job
+    /**
+     * Asynchronously updates the configuration of the merge operation.
+     * @param config (MergeConfig) - New configuration to save.
+     * @returns (Promise<Merge>) - Promise containing the newly updated merge object.
+     */
     updateConfig(config: MergeConfig): Promise<Merge> {
         //console.debug("Updating config");
         this.config = config;
@@ -151,7 +183,12 @@ export default class Merge {
         });
     }
 
-    // Asynchronously adds a duplicate pair (requiring manual merging) to a merge job.
+    /**
+     * Asynchronously adds a detected duplicate pair (requiring manual merging) to the merge job.
+     * @param csvRowNumber (number) - Row number of the CSV file with the detected duplicate data.
+     * @param existingContactId (number) - ID of the contact thought to be a duplicate.
+     * @returns (Promise<Merge>) - Promise containing the newly updated merge object.
+     */
     addDuplicate (csvRowNumber: number, existingContactId: number): Promise<Merge> {
         return new Promise((resolve, reject) => {
             for (const duplicate of this.duplicates) {
@@ -181,7 +218,12 @@ export default class Merge {
         });
     }
 
-    // Asynchronously updates a Merge job
+    /**
+     * Asynchronously removes a detected duplicate from the merge job. This is called each time
+     * a user manually completes merging of a contact data row.
+     * @param csvRowNumber (number) - Row number of the CSV file with the duplicate to remove.
+     * @returns (Promise<Merge>) - Promise containing the newly updated merge object.
+     */
     removeDuplicate(csvRowNumber: number): Promise<Merge> {
         const count = this.duplicates.length;
         this.duplicates = this.duplicates.filter((duplicate) => {

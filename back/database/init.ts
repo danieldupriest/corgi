@@ -10,6 +10,10 @@ const databaseFile = process.env.DATABASE_FILE || "sqlite.db";
 const log = new Logger();
 initialize();
 
+/**
+ * Recreate the sqlite database and all tables. Contacts table is generated
+ * based on the definition of dbFields array in /database/fields.ts file.
+ */
 function initialize(): void {
     //if (fs.existsSync(databaseFile)) {
     //    fs.unlinkSync(databaseFile);

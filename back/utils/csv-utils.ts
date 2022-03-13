@@ -2,6 +2,12 @@ import csv from "async-csv";
 import fs from "fs";
 import { Dict } from "./types"
 
+/**
+ * Extract headers and the rows of a CSV file of contacts. No type conversion
+ * is performed during extraction.
+ * @param filePath (string) - Location of the CSV file.
+ * @returns an array of the format [headers, results]
+ */
 export const csvToHeadersAndDict = async (filePath: string): Promise<[string[], Dict[]]> => {
     console.debug(`Loading CSV file at ${filePath}`);
     const data = fs.readFileSync(filePath, { encoding: "utf8", flag: "r" });
