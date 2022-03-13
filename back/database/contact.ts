@@ -1,6 +1,6 @@
 import db from "./database";
 import { dbFields } from "./fields";
-import { ContactPayload, DbField, FieldType } from "../utils/types";
+import { ContactPayload } from "../utils/types";
 
 // Dataclass to store contact information. args should be an object containing user text fields
 export default class Contact {
@@ -11,11 +11,11 @@ export default class Contact {
     constructor(args: ContactPayload = {}) {
         this.id = 0;
         for (const field of dbFields) {
-            this[field.name] = field.defaultValue;
+            this[field.name] = field.type.defaultValue;
             if (args[field.name]) {
                 this[field.name] = args[field.name];
             } else {
-                this[field.name] = field.defaultValue;
+                this[field.name] = field.type.defaultValue;
             }
         }
     }
@@ -35,8 +35,14 @@ export default class Contact {
                     );
                 }
                 let results = [];
+                console.log(rows);
                 for (const row of rows) {
-                    const contact = this.dbRowToContact(row);
+                    let args: ContactPayload = {};
+                    for (const field of dbFields) {
+                        if (row[field.name])
+                            args[field.name] = field.type.fromDb(row[field.name]);
+                    }
+                    const contact = new Contact(args);
                     results.push(contact);
                 }
                 resolve(results);
@@ -58,7 +64,12 @@ export default class Contact {
                             )
                         );
                     }
-                    const contact = this.dbRowToContact(row);
+                    let args: ContactPayload = {};
+                    for (const field of dbFields) {
+                        if (row[field.name])
+                            args[field.name] = field.type.fromDb(row[field.name]);
+                    }
+                    const contact = new Contact(args);
                     resolve(contact);
                 }
             );
@@ -73,15 +84,12 @@ export default class Contact {
                 let insertQuestions = [];
                 let insertValues = [];
                 for (const field of dbFields) {
-                    if (field.readOnly) {
+                    if (field.type.readOnly) {
                         continue;
                     }
                     insertFields.push(field.name);
                     insertQuestions.push("?");
-                    const value = this.contactFieldToDbField(
-                        field,
-                        this[field.name]
-                    );
+                    const value = field.type.toDb(this[field.name])
                     insertValues.push(value);
                 }
                 db.run(
@@ -119,15 +127,12 @@ export default class Contact {
                 let setStatements = [];
                 let insertValues = [];
                 for (const field of dbFields) {
-                    if (field.readOnly) {
+                    if (field.type.readOnly) {
                         continue;
                     }
                     if (args[field.name] != undefined) {
                         setStatements.push(`${field.name} = ?`);
-                        const newValue = this.contactFieldToDbField(
-                            field,
-                            args[field.name]
-                        );
+                        const newValue = field.type.toDb(this[field.name])
                         insertValues.push(newValue);
                     }
                 }
@@ -150,46 +155,5 @@ export default class Contact {
                 );
             });
         });
-    }
-
-    contactFieldToDbField(field: DbField, value: any): string | null {
-        if (field.type == FieldType.text || field.type == FieldType.integer) {
-            return value;
-        } else if (field.type == FieldType.tags) {
-            const stringified = JSON.stringify(value);
-            return stringified;
-        } else if (field.type == FieldType.date) {
-            if (this[field.name] == null) {
-                return null;
-            } else {
-                return value.getTime();
-            }
-        }
-        throw new Error(`Unknown field type ${field.type}`);
-    }
-
-    static dbRowToContact(row: any): any {
-        let args: ContactPayload = {};
-        for (const field of dbFields) {
-            if (row[field.name]) {
-                if (field.type == FieldType.text || field.type == FieldType.integer) {
-                    args[field.name] = row[field.name];
-                } else if (field.type == FieldType.tags) {
-                    const tagList = JSON.parse(row[field.name]);
-                    args[field.name] = tagList;
-                } else if (field.type == FieldType.date) {
-                    if (row[field.name] == null) {
-                        args[field.name] = null;
-                    } else {
-                        const unixSeconds = row[field.name];
-                        const date = new Date(unixSeconds);
-                        args[field.name] = date;
-                    }
-                } else {
-                    args[field.name] = field.defaultValue;
-                }
-            }
-        }
-        return new Contact(args);
     }
 };
