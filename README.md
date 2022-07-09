@@ -1,5 +1,5 @@
 # CORGI
-Community ORganizer for Grassroots Initiatives
+Community Oganizer for Realizing Grassroots Initiatives
 
 CORGI is a web application for organizing and managing community initiatives. Planned features include:
 
